@@ -8,7 +8,6 @@ import {
   ErrorBoundary as AppRootErrorBoundary,
 } from './routes/app/root';
 
-// The helper function to handle lazy loading with TanStack Query
 const convert = (queryClient: QueryClient) => (m: any) => {
   const { clientLoader, clientAction, default: Component, ...rest } = m;
   return {
@@ -23,7 +22,7 @@ export const createAppRouter = (queryClient: QueryClient) =>
   createBrowserRouter([
     {
       path: '/',
-      element: <AppRoot />, // This is the layout with Header, Outlet, and Footer
+      element: <AppRoot />,
       ErrorBoundary: AppRootErrorBoundary,
       children: [
         {
@@ -44,7 +43,9 @@ export const createAppRouter = (queryClient: QueryClient) =>
         },
       ],
     }
-  ]);
+  ], {
+    basename: '/vite-photo',
+  });
 
 export const AppRouter = () => {
   const queryClient = useQueryClient();
