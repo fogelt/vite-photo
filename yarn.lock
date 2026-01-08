@@ -797,15 +797,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/node@npm:^25.0.0":
-  version: 25.0.3
-  resolution: "@types/node@npm:25.0.3"
-  dependencies:
-    undici-types: "npm:~7.16.0"
-  checksum: 10c0/b7568f0d765d9469621615e2bb257c7fd1953d95e9acbdb58dffb6627a2c4150d405a4600aa1ad8a40182a94fe5f903cafd3c0a2f5132814debd0e3bfd61f835
-  languageName: node
-  linkType: hard
-
 "@types/react-dom@npm:^19.2.3":
   version: 19.2.3
   resolution: "@types/react-dom@npm:19.2.3"
@@ -1008,9 +999,9 @@ __metadata:
   linkType: hard
 
 "caniuse-lite@npm:^1.0.30001759, caniuse-lite@npm:^1.0.30001760":
-  version: 1.0.30001762
-  resolution: "caniuse-lite@npm:1.0.30001762"
-  checksum: 10c0/93707eac5b0240af3f2ce6e2d7ab504a6fefcf9c2f9cd8fb9d488e496a333c61e557dab0472c1b00c17bc386a5dbb792aa4c778cda2d768e17f986617d7aec53
+  version: 1.0.30001763
+  resolution: "caniuse-lite@npm:1.0.30001763"
+  checksum: 10c0/4524f6ae15a18c8510849e43baed01441940c50cab29687cba62dde6354a49549d5bcb7f79b864dadf3f0c8c342038c63131cdb64af382a501593106b1d0028b
   languageName: node
   linkType: hard
 
@@ -1646,6 +1637,15 @@ __metadata:
   languageName: node
   linkType: hard
 
+"lucide-react@npm:^0.562.0":
+  version: 0.562.0
+  resolution: "lucide-react@npm:0.562.0"
+  peerDependencies:
+    react: ^16.5.1 || ^17.0.0 || ^18.0.0 || ^19.0.0
+  checksum: 10c0/c713a2490916e42c678b9df0d7309d8cdb715af1d7139c7eb49c45547901b276a7cf722548012a668dc0e337eeadf5141d5af8c8fcda6721fc58fb2d288efcba
+  languageName: node
+  linkType: hard
+
 "make-fetch-happen@npm:^15.0.0":
   version: 15.0.3
   resolution: "make-fetch-happen@npm:15.0.3"
@@ -1801,13 +1801,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"node-bin-setup@npm:^1.0.0":
-  version: 1.1.4
-  resolution: "node-bin-setup@npm:1.1.4"
-  checksum: 10c0/2cd8f92cafb28c8b4bd65ff91d1b96f65a345d2ee1eee689c47255356568366103436188229f1337f881ac6315a2b6622b6df7ceb7b9631ff45344d68f2d43b4
-  languageName: node
-  linkType: hard
-
 "node-gyp@npm:latest":
   version: 12.1.0
   resolution: "node-gyp@npm:12.1.0"
@@ -1832,17 +1825,6 @@ __metadata:
   version: 2.0.27
   resolution: "node-releases@npm:2.0.27"
   checksum: 10c0/f1e6583b7833ea81880627748d28a3a7ff5703d5409328c216ae57befbced10ce2c991bea86434e8ec39003bd017f70481e2e5f8c1f7e0a7663241f81d6e00e2
-  languageName: node
-  linkType: hard
-
-"node@npm:^24.12.0":
-  version: 24.12.0
-  resolution: "node@npm:24.12.0"
-  dependencies:
-    node-bin-setup: "npm:^1.0.0"
-  bin:
-    node: bin/node
-  checksum: 10c0/7099cdbea3e16e3e3c3a433a9d9a9239642c0735024f6ccfd5c490f609e3397fa7c29d7797878956f59385d22c909d336077075b42ac80f8fd13af85a1cd5617
   languageName: node
   linkType: hard
 
@@ -2546,13 +2528,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"undici-types@npm:~7.16.0":
-  version: 7.16.0
-  resolution: "undici-types@npm:7.16.0"
-  checksum: 10c0/3033e2f2b5c9f1504bdc5934646cb54e37ecaca0f9249c983f7b1fc2e87c6d18399ebb05dc7fd5419e02b2e915f734d872a65da2e3eeed1813951c427d33cc9a
-  languageName: node
-  linkType: hard
-
 "unique-filename@npm:^5.0.0":
   version: 5.0.0
   resolution: "unique-filename@npm:5.0.0"
@@ -2598,7 +2573,6 @@ __metadata:
   dependencies:
     "@tanstack/react-query": "npm:^5.90.16"
     "@tanstack/react-query-devtools": "npm:^5.91.2"
-    "@types/node": "npm:^25.0.0"
     "@types/react": "npm:^19.2.7"
     "@types/react-dom": "npm:^19.2.3"
     "@types/react-router-dom": "npm:^5.3.3"
@@ -2607,7 +2581,7 @@ __metadata:
     babel-plugin-react-compiler: "npm:^1.0.0"
     cloudinary: "npm:^2.8.0"
     concurrently: "npm:^8.2.2"
-    node: "npm:^24.12.0"
+    lucide-react: "npm:^0.562.0"
     postcss: "npm:^8.4.38"
     react: "npm:^19.2.0"
     react-dom: "npm:^19.2.0"
