@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Menu, X } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { NavLink } from '@/components/ui';
 
 export function Header() {
@@ -24,20 +25,18 @@ export function Header() {
     <div className="w-full border-b border-stone-200 bg-white sticky top-0 z-[60] overflow-x-hidden">
       <header className="flex items-center justify-between px-4 md:px-8 py-6 md:py-10 w-full max-w-7xl mx-auto">
 
-        <a href="/" className="z-[70] flex-shrink-0">
+        <Link to="/" className="z-[70] flex-shrink-0" onClick={() => setIsOpen(false)}>
           <h1 className="text-[10px] sm:text-xs md:text-base font-light tracking-[0.2em] md:tracking-[0.3em] uppercase">
             Fotograf <span className="font-medium">Myelie Lendelund</span>
           </h1>
-        </a>
+        </Link>
 
-        {/* Desktop Navigation */}
         <nav className="hidden md:flex items-center gap-8">
           {navLinks.map((link) => (
             <NavLink key={link.text} text={link.text} href={link.href} />
           ))}
         </nav>
 
-        {/* Mobile Toggle - Added flex-shrink-0 to prevent it from squishing */}
         <button
           className="md:hidden z-[70] p-2 flex-shrink-0 -mr-2"
           onClick={() => setIsOpen(!isOpen)}
@@ -46,7 +45,6 @@ export function Header() {
           {isOpen ? <X size={20} className="text-stone-600" /> : <Menu size={20} className="text-stone-600" />}
         </button>
 
-        {/* Mobile Dropdown Overlay */}
         <div className={`
           fixed inset-0 bg-white z-[65] flex flex-col items-center justify-center transition-all duration-300 ease-in-out md:hidden
           ${isOpen ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-full'}
