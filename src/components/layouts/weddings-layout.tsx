@@ -8,7 +8,8 @@ interface Photo {
 }
 
 export function WeddingsLayout({ photos }: { photos: Photo[] }) {
-  const [selectedPhoto, setSelectedPhoto] = useState<Photo | null>(null);
+  // Use index to track the photo for the carousel
+  const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
 
   const firstThree = photos.slice(0, 3);
   const theRest = photos.slice(3);
@@ -38,13 +39,19 @@ export function WeddingsLayout({ photos }: { photos: Photo[] }) {
     },
   ];
 
+  // Helper to find the index and open the modal
+  const handlePhotoClick = (photo: Photo) => {
+    const index = photos.findIndex((p) => p.id === photo.id);
+    setSelectedIndex(index);
+  };
+
   return (
     <section className="w-full flex flex-col gap-16 py-8 bg-white">
       {/* Top Gallery Section */}
       <ImageContainer
         photos={firstThree}
         variant="weddings"
-        onItemClick={(photo) => setSelectedPhoto(photo)}
+        onItemClick={handlePhotoClick}
       />
 
       {/* Pricing Section */}
@@ -101,15 +108,16 @@ export function WeddingsLayout({ photos }: { photos: Photo[] }) {
       <ImageContainer
         photos={theRest}
         variant="weddings"
-        onItemClick={(photo) => setSelectedPhoto(photo)}
+        onItemClick={handlePhotoClick}
       />
 
-      {/* Fullscreen Modal Component */}
+      {/* Fullscreen Carousel Modal */}
       <ImageModal
-        isOpen={!!selectedPhoto}
-        onClose={() => setSelectedPhoto(null)}
-        imageUrl={selectedPhoto?.url || ''}
-        alt={selectedPhoto?.alt || 'Bröllopsfotografi'}
+        isOpen={selectedIndex !== null}
+        onClose={() => setSelectedIndex(null)}
+        photos={photos} // Pass the full array for the carousel
+        currentIndex={selectedIndex ?? 0}
+        setCurrentIndex={setSelectedIndex}
       />
     </section>
   );

@@ -8,21 +8,25 @@ interface Photo {
 }
 
 export function PortfolioLayout({ photos, variant = 'default' }: { photos: Photo[], variant?: 'default' | 'weddings' }) {
-  const [selectedPhoto, setSelectedPhoto] = useState<Photo | null>(null);
+  const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
 
   return (
     <section className="w-full py-4">
       <ImageContainer
         photos={photos}
         variant={variant}
-        onItemClick={(photo) => setSelectedPhoto(photo)}
+        onItemClick={(photo) => {
+          const index = photos.findIndex(p => p.id === photo.id);
+          setSelectedIndex(index);
+        }}
       />
 
       <ImageModal
-        isOpen={!!selectedPhoto}
-        onClose={() => setSelectedPhoto(null)}
-        imageUrl={selectedPhoto?.url || ''}
-        alt={selectedPhoto?.alt || 'Portfoliofoto'}
+        isOpen={selectedIndex !== null}
+        onClose={() => setSelectedIndex(null)}
+        photos={photos}
+        currentIndex={selectedIndex ?? 0}
+        setCurrentIndex={setSelectedIndex}
       />
     </section>
   );
