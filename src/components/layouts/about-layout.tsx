@@ -10,7 +10,7 @@ export function AboutLayout() {
           <ImageCard
             url="https://res.cloudinary.com/dtscgoycp/image/upload/f_auto,q_auto/v1767839556/1767749291849-_DSC0774-1_kopiera_2LITEN_jalfha.jpg"
             alt="Myelie Lendelund"
-            className="aspect-[3/4] w-full grayscale-[20%] sepia-[10%]"
+            className="aspect-[3/4] w-full"
           />
         </div>
 

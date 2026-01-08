@@ -2,11 +2,15 @@ interface ImageCardProps {
   url: string;
   alt?: string;
   className?: string;
+  onClick?: () => void; // Add this line
 }
 
-export function ImageCard({ url, alt, className }: ImageCardProps) {
+export function ImageCard({ url, alt, className, onClick }: ImageCardProps) {
   return (
-    <div className={`relative overflow-hidden group ${className}`}>
+    <div
+      className={`relative overflow-hidden group ${className}`}
+      onClick={onClick} // Add this line
+    >
       <img
         src={url}
         alt={alt || "Fotografi Myelie Lendelund"}

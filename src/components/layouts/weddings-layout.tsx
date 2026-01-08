@@ -1,4 +1,5 @@
-import { ImageContainer } from '@/components/ui';
+import { useState } from 'react';
+import { ImageContainer, ImageModal } from '@/components/ui';
 
 interface Photo {
   id: string;
@@ -7,6 +8,8 @@ interface Photo {
 }
 
 export function WeddingsLayout({ photos }: { photos: Photo[] }) {
+  const [selectedPhoto, setSelectedPhoto] = useState<Photo | null>(null);
+
   const firstThree = photos.slice(0, 3);
   const theRest = photos.slice(3);
 
@@ -24,7 +27,7 @@ export function WeddingsLayout({ photos }: { photos: Photo[] }) {
       includes: "Mingel, vigsel, porträtt, middag, fest",
       images: "Mellan 100-130 bilder",
       price: "16.500 kr",
-      highlight: true, // Optional: highlight the most popular package
+      highlight: true,
     },
     {
       name: "Guld",
@@ -37,9 +40,14 @@ export function WeddingsLayout({ photos }: { photos: Photo[] }) {
 
   return (
     <section className="w-full flex flex-col gap-16 py-8 bg-white">
-      <ImageContainer photos={firstThree} variant="weddings" />
+      {/* Top Gallery Section */}
+      <ImageContainer
+        photos={firstThree}
+        variant="weddings"
+        onItemClick={(photo) => setSelectedPhoto(photo)}
+      />
 
-      {/* 2. Pricing Section */}
+      {/* Pricing Section */}
       <div className="max-w-6xl mx-auto px-6 w-full">
         <div className="text-center mb-12">
           <h2 className="text-[11px] uppercase tracking-[0.4em] text-stone-400 mb-2">
@@ -66,12 +74,10 @@ export function WeddingsLayout({ photos }: { photos: Photo[] }) {
                   <p className="text-[11px] uppercase tracking-wider text-stone-400 font-semibold">Tid</p>
                   <p className="text-xs text-stone-600 leading-relaxed">{pkg.time}</p>
                 </div>
-
                 <div className="space-y-1">
                   <p className="text-[11px] uppercase tracking-wider text-stone-400 font-semibold">Ingår</p>
                   <p className="text-xs text-stone-600 leading-relaxed">{pkg.includes}</p>
                 </div>
-
                 <div className="space-y-1">
                   <p className="text-[11px] uppercase tracking-wider text-stone-400 font-semibold">Leverans</p>
                   <p className="text-xs text-stone-600 leading-relaxed">{pkg.images}</p>
@@ -91,7 +97,20 @@ export function WeddingsLayout({ photos }: { photos: Photo[] }) {
         </div>
       </div>
 
-      <ImageContainer photos={theRest} variant="weddings" />
+      {/* Bottom Gallery Section */}
+      <ImageContainer
+        photos={theRest}
+        variant="weddings"
+        onItemClick={(photo) => setSelectedPhoto(photo)}
+      />
+
+      {/* Fullscreen Modal Component */}
+      <ImageModal
+        isOpen={!!selectedPhoto}
+        onClose={() => setSelectedPhoto(null)}
+        imageUrl={selectedPhoto?.url || ''}
+        alt={selectedPhoto?.alt || 'Bröllopsfotografi'}
+      />
     </section>
   );
 }
