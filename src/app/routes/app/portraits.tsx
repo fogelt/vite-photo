@@ -1,10 +1,17 @@
-import { PHOTO_DATA } from '@/lib/image-paths';
+import { useQuery } from '@tanstack/react-query';
 import { PortraitsLayout } from '@/components/layouts/portraits-layout';
+import { fetchPhotosByTag } from '@/services/photo-fetcher';
 
 export default function PortraitsRoute() {
+  const { data: photos, isLoading, error } = useQuery({
+    queryKey: ['photos', 'portraits'],
+    queryFn: () => fetchPhotosByTag('portraits'),
+  });
+
+  if (isLoading) return;
+  if (error) return;
+
   return (
-    <div className="animate-in fade-in slide-in-from-bottom-4 duration-1000">
-      <PortraitsLayout photos={PHOTO_DATA.portraits} variant="default" />
-    </div>
+    <PortraitsLayout photos={photos} variant="default" />
   );
 }

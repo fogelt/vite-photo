@@ -1,10 +1,17 @@
-import { PHOTO_DATA } from '@/lib/image-paths';
+import { useQuery } from '@tanstack/react-query';
 import { WeddingsLayout } from '@/components/layouts/weddings-layout';
+import { fetchPhotosByTag } from '@/services/photo-fetcher';
 
 export default function WeddingsRoute() {
+  const { data: photos, isLoading, error } = useQuery({
+    queryKey: ['photos', 'weddings'],
+    queryFn: () => fetchPhotosByTag('weddings'),
+  });
+
+  if (isLoading) return;
+  if (error) return;
+
   return (
-    <div className="animate-in fade-in slide-in-from-bottom-4 duration-1000">
-      <WeddingsLayout photos={PHOTO_DATA.weddings} />
-    </div>
+    <WeddingsLayout photos={photos} />
   );
 }

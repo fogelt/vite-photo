@@ -3,5 +3,6 @@ export const paths = {
   about: { path: '/about' },
   portraits: { path: '/portraits' },
   weddings: { path: '/weddings' },
+  admin: { patk: '/admin' }
 } as const;
 

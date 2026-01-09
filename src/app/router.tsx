@@ -3,6 +3,7 @@ import { useMemo } from 'react';
 import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 
 import { paths } from '@/config/paths';
+import { AdminGuard } from '@/components/auth';
 import {
   default as AppRoot,
   ErrorBoundary as AppRootErrorBoundary,
@@ -23,23 +24,21 @@ export const createAppRouter = (queryClient: QueryClient) =>
     {
       path: '/',
       element: <AppRoot />,
-      ErrorBoundary: AppRootErrorBoundary,
+      //ErrorBoundary: AppRootErrorBoundary,
       children: [
+        { index: true, lazy: () => import('./routes/app/portfolio').then(convert(queryClient)) },
+        { path: paths.portraits.path, lazy: () => import('./routes/app/portraits').then(convert(queryClient)) },
+        { path: paths.weddings.path, lazy: () => import('./routes/app/weddings').then(convert(queryClient)) },
+        { path: paths.about.path, lazy: () => import('./routes/app/about').then(convert(queryClient)) },
         {
-          index: true,
-          lazy: () => import('./routes/app/portfolio').then(convert(queryClient)),
-        },
-        {
-          path: paths.portraits.path,
-          lazy: () => import('./routes/app/portraits').then(convert(queryClient)),
-        },
-        {
-          path: paths.weddings.path,
-          lazy: () => import('./routes/app/weddings').then(convert(queryClient)),
-        },
-        {
-          path: paths.about.path,
-          lazy: () => import('./routes/app/about').then(convert(queryClient)),
+          path: 'admin',
+          element: <AdminGuard />,
+          children: [
+            {
+              index: true,
+              lazy: () => import('./routes/auth/admin').then(convert(queryClient)),
+            }
+          ]
         },
       ],
     }
@@ -49,8 +48,6 @@ export const createAppRouter = (queryClient: QueryClient) =>
 
 export const AppRouter = () => {
   const queryClient = useQueryClient();
-
   const router = useMemo(() => createAppRouter(queryClient), [queryClient]);
-
   return <RouterProvider router={router} />;
 };

@@ -4,9 +4,10 @@ interface ImageCardProps {
   className?: string;
   style?: React.CSSProperties;
   onClick?: () => void;
+  onLoad?: () => void;
 }
 
-export function ImageCard({ url, alt, className, style, onClick }: ImageCardProps) {
+export function ImageCard({ url, alt, className, style, onClick, onLoad }: ImageCardProps) {
   return (
     <div
       className={`relative overflow-hidden group ${className}`}
@@ -16,6 +17,7 @@ export function ImageCard({ url, alt, className, style, onClick }: ImageCardProp
       <img
         src={url}
         alt={alt || "Fotografi Myelie Lendelund"}
+        onLoad={onLoad} // Triggar funktionen i ImageContainer när filen är hämtad
         className="h-full w-full object-cover object-[center_25%] transition-transform duration-700 ease-out group-hover:scale-105"
       />
       <div className="absolute inset-0 bg-black/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />

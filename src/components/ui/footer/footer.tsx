@@ -56,7 +56,6 @@ export function Footer() {
             <MapPin size={12} strokeWidth={1.2} />
             <span>Sverige</span>
           </div>
-
         </div>
       </div>
     </footer>

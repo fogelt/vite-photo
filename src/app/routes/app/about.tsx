@@ -1,9 +1,19 @@
+import { useQuery } from '@tanstack/react-query';
 import { AboutLayout } from '@/components/layouts/about-layout';
+import { fetchPhotosByTag } from '@/services/photo-fetcher';
 
 export default function AboutRoute() {
+  const { data: photos, isLoading } = useQuery({
+    queryKey: ['photos', 'about'],
+    queryFn: () => fetchPhotosByTag('about'),
+  });
+
+  const profileImage = photos?.[0];
+
   return (
-    <div className="animate-in fade-in slide-in-from-bottom-4 duration-1000">
-      <AboutLayout />
-    </div>
+    <AboutLayout
+      image={profileImage}
+      isLoading={isLoading}
+    />
   );
 }

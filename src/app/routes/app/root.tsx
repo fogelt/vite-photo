@@ -5,7 +5,7 @@ import { ScrollToTop } from '@/utils';
 export default function AppRoot() {
   return (
     <div className="min-h-screen flex flex-col">
-      <ScrollToTop /> {/* Place it here */}
+      <ScrollToTop />
       <Header />
       <main className="flex-grow">
         <Outlet />
