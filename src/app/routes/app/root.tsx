@@ -4,7 +4,7 @@ import { ScrollToTop } from '@/utils';
 
 export default function AppRoot() {
   return (
-    <div className="min-h-screen flex flex-col animate-in fade-in slide-in-from-bottom-4 duration-1000">
+    <div className="min-h-screen flex flex-col">
       <ScrollToTop /> {/* Place it here */}
       <Header />
       <main className="flex-grow">
