@@ -3,8 +3,6 @@ import { PortfolioLayout } from '@/components/layouts/portfolio-layout';
 
 export default function PortfolioRoute() {
   return (
-    <div className="animate-in fade-in slide-in-from-bottom-4 duration-1000">
-      <PortfolioLayout photos={PHOTO_DATA.portfolio} variant="default" />
-    </div>
+    <PortfolioLayout photos={PHOTO_DATA.portfolio} variant="default" />
   );
 }
