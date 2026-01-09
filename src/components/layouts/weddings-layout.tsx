@@ -20,22 +20,22 @@ export function WeddingsLayout({ photos }: { photos: Photo[] }) {
       time: "3 timmar bevakning",
       includes: "Mingel, vigsel, porträtt",
       images: "Mellan 30-40 bilder",
-      price: "9.500 kr",
+      price: "8.000 kr",
     },
     {
       name: "Silver",
       time: "10 timmar bevakning",
       includes: "Mingel, vigsel, porträtt, middag, fest",
-      images: "Mellan 100-130 bilder",
-      price: "16.500 kr",
+      images: "Mellan 80-110 bilder",
+      price: "20.000 kr",
       highlight: true,
     },
     {
       name: "Guld",
       time: "Heldag (15 timmar)",
       includes: "Förberedelser, first-look, mingel, vigsel, porträtt, middag, fest",
-      images: "Mellan 140-160 bilder",
-      price: "24.500 kr",
+      images: "Mellan 130-150 bilder",
+      price: "25.000 kr",
     },
   ];
 
