@@ -2,14 +2,16 @@ interface ImageCardProps {
   url: string;
   alt?: string;
   className?: string;
+  style?: React.CSSProperties;
   onClick?: () => void;
 }
 
-export function ImageCard({ url, alt, className, onClick }: ImageCardProps) {
+export function ImageCard({ url, alt, className, style, onClick }: ImageCardProps) {
   return (
     <div
       className={`relative overflow-hidden group ${className}`}
       onClick={onClick}
+      style={style}
     >
       <img
         src={url}

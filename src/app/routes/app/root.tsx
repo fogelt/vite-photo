@@ -1,9 +1,11 @@
 import { Outlet } from 'react-router-dom';
 import { Header, Footer } from '@/components/ui';
+import { ScrollToTop } from '@/utils';
 
 export default function AppRoot() {
   return (
     <div className="min-h-screen flex flex-col">
+      <ScrollToTop /> {/* Place it here */}
       <Header />
       <main className="flex-grow">
         <Outlet />

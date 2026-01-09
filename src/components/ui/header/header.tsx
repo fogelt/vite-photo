@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Menu, X } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { NavLink } from '@/components/ui';
+import { ScrollToTop } from '@/utils';
 
 export function Header() {
   const [isOpen, setIsOpen] = useState(false);

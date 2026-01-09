@@ -9,7 +9,7 @@ interface Photo {
 interface ImageContainerProps {
   photos: Photo[];
   variant?: 'default' | 'weddings';
-  onItemClick?: (photo: Photo) => void; // Add this prop
+  onItemClick?: (photo: Photo) => void;
 }
 
 export function ImageContainer({
@@ -43,8 +43,16 @@ export function ImageContainer({
           key={photo.id}
           url={photo.url}
           alt={photo.alt}
-          className={`flex-grow ${getSizingClasses(index)}`} // Added cursor here
-          onClick={() => onItemClick?.(photo)} // Pass the photo object back up
+          // We apply the animation classes and sizing classes to the SAME element
+          className={`
+            flex-grow ${getSizingClasses(index)}
+            animate-in fade-in slide-in-from-bottom-4 duration-700 fill-mode-both
+          `}
+          // We pass the delay as an inline style so it doesn't affect the CSS classes
+          style={{
+            animationDelay: `${Math.min(index * 100, 1000)}ms`
+          }}
+          onClick={() => onItemClick?.(photo)}
         />
       ))}
     </div>
