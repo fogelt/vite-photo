@@ -24,7 +24,7 @@ export const createAppRouter = (queryClient: QueryClient) =>
     {
       path: '/',
       element: <AppRoot />,
-      //ErrorBoundary: AppRootErrorBoundary,
+      ErrorBoundary: AppRootErrorBoundary,
       children: [
         { index: true, lazy: () => import('./routes/app/portfolio').then(convert(queryClient)) },
         { path: paths.portraits.path, lazy: () => import('./routes/app/portraits').then(convert(queryClient)) },
