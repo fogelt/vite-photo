@@ -1,7 +1,7 @@
 import { useUser, RedirectToSignIn, useClerk } from "@clerk/clerk-react";
 import { Outlet } from "react-router-dom";
 
-const ADMIN_EMAIL = import.meta.env.VITE_ADMIN_EMAIL;
+const CLERK_USER_ID = import.meta.env.VITE_CLERK_USER_ID;
 
 export const AdminGuard = () => {
   const { isLoaded, isSignedIn, user } = useUser();
@@ -15,7 +15,7 @@ export const AdminGuard = () => {
 
   if (!isSignedIn) return <RedirectToSignIn />;
 
-  if (user.primaryEmailAddress?.emailAddress !== ADMIN_EMAIL) {
+  if (user.id !== CLERK_USER_ID) {
     return (
       <div className="flex flex-col h-[60vh] items-center justify-center gap-4">
         <p className="text-[10px] uppercase tracking-[0.2em] text-red-800">Åtkomst nekad</p>
