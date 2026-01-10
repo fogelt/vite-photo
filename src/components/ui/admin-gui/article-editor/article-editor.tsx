@@ -1,10 +1,12 @@
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase, createClerkSupabaseClient } from "@/services";
+import { useAuth } from "@clerk/clerk-react";
 import { Modal } from "@/components/ui";
 
 export function ArticleAdmin({ onClose }: { onClose: () => void }) {
   const queryClient = useQueryClient();
+  const { getToken } = useAuth();
   const [isSaving, setIsSaving] = useState(false);
   const [formData, setFormData] = useState({
     title: "",
@@ -25,6 +27,12 @@ export function ArticleAdmin({ onClose }: { onClose: () => void }) {
 
   const closeModal = () => setModalConfig(prev => ({ ...prev, isOpen: false }));
 
+  const getAuthenticatedClient = async () => {
+    const token = await getToken({ template: "supabase" });
+    if (!token) throw new Error("Verifiering misslyckades. Logga in igen.");
+    return createClerkSupabaseClient(token);
+  };
+
   const { data: articles, isLoading } = useQuery({
     queryKey: ["articles"],
     queryFn: async () => {
@@ -39,8 +47,8 @@ export function ArticleAdmin({ onClose }: { onClose: () => void }) {
   });
 
   const handleImageUpload = () => {
-    if (!window.cloudinary) return;
-    window.cloudinary.createUploadWidget(
+    if (!(window as any).cloudinary) return;
+    (window as any).cloudinary.createUploadWidget(
       {
         cloudName: "dtscgoycp",
         uploadPreset: "myelie_preset",
@@ -60,7 +68,7 @@ export function ArticleAdmin({ onClose }: { onClose: () => void }) {
     setIsSaving(true);
 
     try {
-      const adminClient = createClerkSupabaseClient();
+      const adminClient = await getAuthenticatedClient();
       const { error } = await adminClient
         .from("articles")
         .insert([formData]);
@@ -95,7 +103,7 @@ export function ArticleAdmin({ onClose }: { onClose: () => void }) {
       type: 'danger',
       onConfirm: async () => {
         try {
-          const adminClient = createClerkSupabaseClient();
+          const adminClient = await getAuthenticatedClient();
           const { error } = await adminClient
             .from("articles")
             .delete()
