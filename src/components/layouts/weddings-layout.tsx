@@ -35,7 +35,6 @@ export function WeddingsLayout({ photos }: { photos: Photo[] }) {
 
       {/* Pricing Section */}
       <div className="max-w-6xl mx-auto px-6 w-full">
-        {/* Animerad rubrik - dyker upp mjukt */}
         <div className="text-center mb-12 animate-in fade-in slide-in-from-bottom-4 duration-1000 fill-mode-both">
           <h2 className="text-[11px] uppercase tracking-[0.4em] text-stone-400 mb-2">
             Bröllopspaket
