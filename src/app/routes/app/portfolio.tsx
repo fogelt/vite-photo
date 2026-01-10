@@ -3,7 +3,7 @@ import { PortfolioLayout } from '@/components/layouts/portfolio-layout';
 import { fetchPhotosByTag } from '@/services/photo-fetcher';
 
 export default function PortfolioRoute() {
-  const { data: photos, isLoading, error } = useQuery({
+  const { data: photos = [], isLoading, error } = useQuery({
     queryKey: ['photos', 'portfolio'],
     queryFn: () => fetchPhotosByTag('portfolio'),
   });

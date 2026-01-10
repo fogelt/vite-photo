@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { supabase, createClerkSupabaseClient } from "@/services"; // Importera båda
+import { supabase, createClerkSupabaseClient } from "@/services";
+import { Modal } from "@/components/ui";
 
 export function ArticleAdmin({ onClose }: { onClose: () => void }) {
   const queryClient = useQueryClient();
@@ -14,7 +15,16 @@ export function ArticleAdmin({ onClose }: { onClose: () => void }) {
     published_date: "",
   });
 
-  // 1. Hämta artiklar (Här räcker det med den vanliga publika klienten)
+  const [modalConfig, setModalConfig] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    type?: 'info' | 'danger';
+    onConfirm?: () => void;
+  }>({ isOpen: false, title: "", message: "" });
+
+  const closeModal = () => setModalConfig(prev => ({ ...prev, isOpen: false }));
+
   const { data: articles, isLoading } = useQuery({
     queryKey: ["articles"],
     queryFn: async () => {
@@ -45,15 +55,12 @@ export function ArticleAdmin({ onClose }: { onClose: () => void }) {
     ).open();
   };
 
-  // 2. Spara artikel (Här MÅSTE vi ha admin-klienten)
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSaving(true);
 
     try {
-      // Skapa klienten som har din hemliga admin-header
       const adminClient = createClerkSupabaseClient();
-
       const { error } = await adminClient
         .from("articles")
         .insert([formData]);
@@ -62,33 +69,49 @@ export function ArticleAdmin({ onClose }: { onClose: () => void }) {
 
       setFormData({ title: "", publisher: "", description: "", image_url: "", link_url: "", published_date: "" });
       queryClient.invalidateQueries({ queryKey: ["articles"] });
-      alert("Artikeln sparad säkert!");
+
+      setModalConfig({
+        isOpen: true,
+        title: "Publicerad",
+        message: "Artikeln har lagts till i ditt arkiv."
+      });
 
     } catch (error: any) {
-      console.error("Supabase Error:", error);
-      alert("Fel vid sparande: " + (error.message || "Kontrollera dina RLS-inställningar"));
+      setModalConfig({
+        isOpen: true,
+        title: "Ett fel uppstod",
+        message: error.message || "Kunde inte spara artikeln."
+      });
     } finally {
       setIsSaving(false);
     }
   };
 
-  // 3. Radera artikel (Här MÅSTE vi också ha admin-klienten)
-  const handleDelete = async (id: string) => {
-    if (!confirm("Är du säker på att du vill radera artikeln?")) return;
+  const handleDelete = (id: string) => {
+    setModalConfig({
+      isOpen: true,
+      title: "Radera artikel",
+      message: "Är du säker på att du vill radera artikeln? Detta går inte att ångra.",
+      type: 'danger',
+      onConfirm: async () => {
+        try {
+          const adminClient = createClerkSupabaseClient();
+          const { error } = await adminClient
+            .from("articles")
+            .delete()
+            .eq("id", id);
 
-    try {
-      const adminClient = createClerkSupabaseClient();
-
-      const { error } = await adminClient
-        .from("articles")
-        .delete()
-        .eq("id", id);
-
-      if (error) throw error;
-      queryClient.invalidateQueries({ queryKey: ["articles"] });
-    } catch (error: any) {
-      alert("Kunde inte radera: " + error.message);
-    }
+          if (error) throw error;
+          queryClient.invalidateQueries({ queryKey: ["articles"] });
+        } catch (error: any) {
+          setModalConfig({
+            isOpen: true,
+            title: "Fel vid radering",
+            message: error.message
+          });
+        }
+      }
+    });
   };
 
   return (
@@ -108,12 +131,10 @@ export function ArticleAdmin({ onClose }: { onClose: () => void }) {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-20">
-          {/* Formulär */}
           <section className="space-y-12">
             <h3 className="text-[11px] uppercase tracking-[0.2em] text-stone-900 font-bold border-l-2 border-stone-900 pl-4">Ny artikel</h3>
             <form onSubmit={handleSubmit} className="space-y-8">
               <div className="space-y-6">
-                {/* Bild-uppladdning */}
                 <div className="space-y-3">
                   <label className="text-[10px] uppercase tracking-widest text-stone-500 font-bold">Artikelbild</label>
                   <div
@@ -160,7 +181,6 @@ export function ArticleAdmin({ onClose }: { onClose: () => void }) {
             </form>
           </section>
 
-          {/* Lista */}
           <section className="space-y-12">
             <h3 className="text-[11px] uppercase tracking-[0.2em] text-stone-400 font-bold">Publicerade artiklar</h3>
             <div className="space-y-4">
@@ -185,6 +205,8 @@ export function ArticleAdmin({ onClose }: { onClose: () => void }) {
           </section>
         </div>
       </div>
+
+      <Modal {...modalConfig} onClose={closeModal} />
     </div>
   );
 }
