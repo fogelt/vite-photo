@@ -1,13 +1,4 @@
-import { createClient } from "@supabase/supabase-js";
-
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-const supabaseKey = import.meta.env.VITE_SUPABASE_KEY;
-
-// Exporting a safe instance
-export const supabase = (supabaseUrl && supabaseKey)
-  ? createClient(supabaseUrl, supabaseKey)
-  : null;
-
+import { supabase } from "@/services";
 const CLOUD_NAME = "dtscgoycp";
 
 export async function fetchPhotosByTag(tag: string | null) {

@@ -30,6 +30,7 @@ export const createAppRouter = (queryClient: QueryClient) =>
         { path: paths.portraits.path, lazy: () => import('./routes/app/portraits').then(convert(queryClient)) },
         { path: paths.weddings.path, lazy: () => import('./routes/app/weddings').then(convert(queryClient)) },
         { path: paths.about.path, lazy: () => import('./routes/app/about').then(convert(queryClient)) },
+        { path: paths.articles.path, lazy: () => import('./routes/app/articles').then(convert(queryClient)) },
         {
           path: 'admin',
           element: <AdminGuard />,

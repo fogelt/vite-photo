@@ -18,6 +18,7 @@ export function Header() {
     { text: "Portfölj", href: "/" },
     { text: "Porträtt", href: "/portraits" },
     { text: "Bröllop", href: "/weddings" },
+    { text: "Reportage", href: "/articles" },
     { text: "Om Mig", href: "/about" },
   ];
 
