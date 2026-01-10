@@ -4,13 +4,15 @@ import { ScrollToTop } from '@/utils';
 
 export default function AppRoot() {
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col selection:bg-stone-100">
       <ScrollToTop />
       <Header />
-      <main className="flex-grow">
+      <main className="flex-grow min-h-[90vh]">
         <Outlet />
       </main>
-      <Footer />
+      <div className="animate-in fade-in duration-1000 delay-700 fill-mode-both">
+        <Footer />
+      </div>
     </div>
   );
 }

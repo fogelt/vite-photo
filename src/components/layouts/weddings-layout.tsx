@@ -8,38 +8,17 @@ interface Photo {
 }
 
 export function WeddingsLayout({ photos }: { photos: Photo[] }) {
-  // Use index to track the photo for the carousel
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
 
   const firstThree = photos.slice(0, 3);
   const theRest = photos.slice(3);
 
   const packages = [
-    {
-      name: "Brons",
-      time: "3 timmar bevakning",
-      includes: "Mingel, vigsel, porträtt",
-      images: "Mellan 30-40 bilder",
-      price: "8.000 kr",
-    },
-    {
-      name: "Silver",
-      time: "10 timmar bevakning",
-      includes: "Mingel, vigsel, porträtt, middag, fest",
-      images: "Mellan 80-110 bilder",
-      price: "20.000 kr",
-      highlight: true,
-    },
-    {
-      name: "Guld",
-      time: "Heldag (15 timmar)",
-      includes: "Förberedelser, first-look, mingel, vigsel, porträtt, middag, fest",
-      images: "Mellan 130-150 bilder",
-      price: "25.000 kr",
-    },
+    { name: "Brons", time: "3 timmar bevakning", includes: "Mingel, vigsel, porträtt", images: "Mellan 30-40 bilder", price: "8.000 kr" },
+    { name: "Silver", time: "10 timmar bevakning", includes: "Mingel, vigsel, porträtt, middag, fest", images: "Mellan 80-110 bilder", price: "20.000 kr", highlight: true },
+    { name: "Guld", time: "Heldag (15 timmar)", includes: "Förberedelser, first-look, mingel, vigsel, porträtt, middag, fest", images: "Mellan 130-150 bilder", price: "25.000 kr" },
   ];
 
-  // Helper to find the index and open the modal
   const handlePhotoClick = (photo: Photo) => {
     const index = photos.findIndex((p) => p.id === photo.id);
     setSelectedIndex(index);
@@ -56,7 +35,8 @@ export function WeddingsLayout({ photos }: { photos: Photo[] }) {
 
       {/* Pricing Section */}
       <div className="max-w-6xl mx-auto px-6 w-full">
-        <div className="text-center mb-12">
+        {/* Animerad rubrik - dyker upp mjukt */}
+        <div className="text-center mb-12 animate-in fade-in slide-in-from-bottom-4 duration-1000 fill-mode-both">
           <h2 className="text-[11px] uppercase tracking-[0.4em] text-stone-400 mb-2">
             Bröllopspaket
           </h2>
@@ -64,12 +44,14 @@ export function WeddingsLayout({ photos }: { photos: Photo[] }) {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          {packages.map((pkg) => (
+          {packages.map((pkg, index) => (
             <div
               key={pkg.name}
+              style={{ animationDelay: `${(index + 1) * 200}ms` }} // Stegrad delay för paketen
               className={`
-                flex flex-col p-8 border border-stone-200 transition-all duration-500
-                ${pkg.highlight ? 'bg-stone-50/50 shadow-sm ring-1 ring-stone-200' : 'bg-white hover:shadow-md'}
+                flex flex-col p-8 border border-stone-200 transition-all duration-700
+                animate-in fade-in slide-in-from-bottom-6 fill-mode-both
+                ${pkg.highlight ? 'bg-stone-50/50 shadow-sm ring-1 ring-stone-200 scale-[1.02] md:scale-105 z-10' : 'bg-white hover:shadow-md'}
               `}
             >
               <h3 className="font-light tracking-[0.2em] uppercase text-base mb-4 text-stone-800">
@@ -111,11 +93,10 @@ export function WeddingsLayout({ photos }: { photos: Photo[] }) {
         onItemClick={handlePhotoClick}
       />
 
-      {/* Fullscreen Carousel Modal */}
       <ImageModal
         isOpen={selectedIndex !== null}
         onClose={() => setSelectedIndex(null)}
-        photos={photos} // Pass the full array for the carousel
+        photos={photos}
         currentIndex={selectedIndex ?? 0}
         setCurrentIndex={setSelectedIndex}
       />
