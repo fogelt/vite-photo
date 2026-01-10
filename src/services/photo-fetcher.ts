@@ -11,25 +11,24 @@ export async function fetchPhotosByTag(tag: string | null) {
   if (!tag) return [];
 
   try {
-    // Hämta blacklistade ID:n från Supabase
+    const cacheBuster = new Date().getTime();
+
     const { data: blacklist } = await supabase
       .from("photo_blacklist")
       .select("photo_id");
 
     const blacklistedIds = new Set(blacklist?.map(b => b.photo_id) || []);
 
-    // Hämta Cloudinary-datan
-    const response = await fetch(`https://res.cloudinary.com/${CLOUD_NAME}/image/list/${tag}.json`);
+    const response = await fetch(
+      `https://res.cloudinary.com/${CLOUD_NAME}/image/list/${tag}.json?cb=${cacheBuster}`
+    );
+
     let cloudResources: CloudinaryResource[] = [];
     if (response.ok) {
       const data = await response.json();
-      // Filtrera bort blacklistade bilder direkt från Cloudinary-listan
       cloudResources = data.resources.filter((r: CloudinaryResource) => !blacklistedIds.has(r.public_id));
     }
 
-    const cloudMap = new Map(cloudResources.map((r: CloudinaryResource) => [r.public_id, r]));
-
-    // Hämta ordningen från Supabase
     const { data: dbOrder, error } = await supabase
       .from("photo_order")
       .select("*")
@@ -38,10 +37,10 @@ export async function fetchPhotosByTag(tag: string | null) {
 
     if (error) throw error;
 
-    // Filtrera även Supabase-ordningen mot blacklistan (för säkerhets skull)
     const validDbOrder = (dbOrder || []).filter(item => !blacklistedIds.has(item.id));
     const sortedIds = new Set(validDbOrder.map(item => item.id));
 
+    // Slå ihop listorna
     const finalItems = [
       ...validDbOrder.map(item => ({
         id: item.id,

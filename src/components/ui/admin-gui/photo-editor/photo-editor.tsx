@@ -20,7 +20,7 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 import { ImageContainer, Modal } from "@/components/ui";
 
-
+// --- Sorterbara komponenter ---
 function SortablePhoto({ photo, index, onDelete }: { photo: any; index: number; onDelete: (id: string) => void }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: photo.id });
   const style = {
@@ -65,10 +65,12 @@ function SortablePreviewItem({ photo, index, sizingClass }: { photo: any; index:
   );
 }
 
+// --- Huvudkomponent: PhotoEditor ---
 export function PhotoEditor({ tag }: { tag: string }) {
   const queryClient = useQueryClient();
   const [items, setItems] = useState<any[]>([]);
   const [isSaving, setIsSaving] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
   const [isRearrangeMode, setIsRearrangeMode] = useState(true);
 
   const [modalConfig, setModalConfig] = useState<{
@@ -80,33 +82,62 @@ export function PhotoEditor({ tag }: { tag: string }) {
     queryFn: () => fetchPhotosByTag(tag),
   });
 
+  // Uppdatera lokalt state när data hämtas
   useEffect(() => {
-    setItems(photos || []);
+    if (photos) setItems(photos);
   }, [photos]);
 
-  const handleUpload = () => {
-    if (!window.cloudinary) return;
+  // --- Hantera Uppladdning ---
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
 
-    const currentTag = String(tag).trim();
+    setIsUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("upload_preset", "myelie_preset");
+      formData.append("tags", tag);
 
-    window.cloudinary.createUploadWidget(
-      {
-        cloudName: "dtscgoycp",
-        uploadPreset: "myelie_preset",
-        tags: [currentTag],
-        clientAllowedFormats: ["png", "jpeg", "jpg", "webp"],
-      },
-      (error: any, result: any) => {
-        if (!error && result.event === "success") {
-          console.log("Cloudinary success for tag:", currentTag);
-          queryClient.invalidateQueries({ queryKey: ["photos", currentTag] });
-        }
-      }
-    ).open();
+      const clResponse = await fetch(
+        `https://api.cloudinary.com/v1_1/dtscgoycp/image/upload`,
+        { method: "POST", body: formData }
+      );
+      if (!clResponse.ok) throw new Error("Cloudinary upload failed");
+      const uploadedImage = await clResponse.json();
+
+      const adminClient = createClerkSupabaseClient();
+      const { error: dbError } = await adminClient
+        .from("photo_order")
+        .insert([{
+          id: uploadedImage.public_id,
+          url: uploadedImage.secure_url,
+          tag: tag,
+          position: 0 // Lägg den först
+        }]);
+
+      if (dbError) throw dbError;
+
+      await queryClient.invalidateQueries({ queryKey: ["photos", tag] });
+
+      setModalConfig({
+        isOpen: true,
+        title: "Klar!",
+        message: "Bilden har lagts till."
+      });
+    } catch (err: any) {
+      setModalConfig({
+        isOpen: true,
+        title: "Fel",
+        message: err.message
+      });
+    } finally {
+      setIsUploading(false);
+      e.target.value = "";
+    }
   };
 
-  const closeModal = () => setModalConfig(prev => ({ ...prev, isOpen: false }));
-
+  // --- Hantera Sortering ---
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
@@ -123,39 +154,31 @@ export function PhotoEditor({ tag }: { tag: string }) {
     }
   };
 
+  // --- Hantera Radering ---
   const handleDelete = (photoId: string) => {
     setModalConfig({
       isOpen: true,
       title: "Radera bild",
-      message: "Är du säker? Bilden kommer tas bort från alla gallerier.",
+      message: "Vill du verkligen ta bort bilden?",
       type: 'danger',
       onConfirm: async () => {
         try {
           const adminClient = createClerkSupabaseClient();
-
-          // Kör båda operationerna samtidigt
           await Promise.all([
-            // Ta bort från ordningen
             adminClient.from("photo_order").delete().eq("id", photoId),
-            // Lägg till i blacklistan så den inte hämtas via Cloudinary-fallbacken
             adminClient.from("photo_blacklist").insert([{ photo_id: photoId }])
           ]);
 
-          // Uppdatera UI
           setItems(prev => prev.filter(item => item.id !== photoId));
           queryClient.invalidateQueries({ queryKey: ["photos", tag] });
-
         } catch (err: any) {
-          setModalConfig({
-            isOpen: true,
-            title: "Fel vid radering",
-            message: err.message
-          });
+          setModalConfig({ isOpen: true, title: "Fel vid radering", message: err.message });
         }
       }
     });
   };
 
+  // --- Spara till Supabase ---
   const saveOrder = async () => {
     setIsSaving(true);
     const updates = items.map((item, index) => ({
@@ -167,16 +190,26 @@ export function PhotoEditor({ tag }: { tag: string }) {
 
     try {
       const adminClient = createClerkSupabaseClient();
-      const { error } = await adminClient.from("photo_order").upsert(updates);
+      const { error } = await adminClient
+        .from("photo_order")
+        .upsert(updates, { onConflict: 'id' });
+
       if (error) throw error;
+
       await queryClient.invalidateQueries({ queryKey: ["photos", tag] });
-      setModalConfig({ isOpen: true, title: "Sparat", message: "Den nya ordningen är nu live." });
+      setModalConfig({ isOpen: true, title: "Sparat", message: "Den nya ordningen är sparad." });
     } catch (err: any) {
-      setModalConfig({ isOpen: true, title: "Fel", message: err.message });
+      setModalConfig({ isOpen: true, title: "Fel vid sparande", message: err.message });
     } finally {
       setIsSaving(false);
     }
   };
+
+  const closeModal = () => setModalConfig({
+    isOpen: false,
+    title: "",
+    message: ""
+  });
 
   if (isLoading) return <div className="text-[10px] uppercase tracking-widest text-stone-400 animate-pulse pt-12">Hämtar bilder...</div>;
 
@@ -199,12 +232,18 @@ export function PhotoEditor({ tag }: { tag: string }) {
             </button>
           </div>
 
-          <button
-            onClick={handleUpload}
-            className="text-[10px] uppercase tracking-[0.2em] text-stone-900 border-b border-stone-900 pb-1 hover:text-stone-400 hover:border-stone-400 transition-all font-bold"
-          >
-            + Ladda upp till {tag}
-          </button>
+          <label className="cursor-pointer group">
+            <input
+              type="file"
+              className="hidden"
+              accept="image/*"
+              onChange={handleFileSelect}
+              disabled={isUploading}
+            />
+            <span className={`text-[10px] uppercase tracking-[0.2em] border-b pb-1 transition-all font-bold ${isUploading ? 'text-stone-300 border-stone-300' : 'text-stone-900 border-stone-900 hover:text-stone-400 hover:border-stone-400'}`}>
+              {isUploading ? "Laddar upp..." : `+ Ladda upp till ${tag}`}
+            </span>
+          </label>
         </div>
 
         <button
@@ -236,7 +275,9 @@ export function PhotoEditor({ tag }: { tag: string }) {
         </SortableContext>
       </DndContext>
 
-      <Modal {...modalConfig} onClose={closeModal} />
+      {modalConfig.isOpen && modalConfig.title && (
+        <Modal {...modalConfig} onClose={closeModal} />
+      )}
     </div>
   );
 }
