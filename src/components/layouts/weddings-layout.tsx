@@ -5,6 +5,7 @@ interface Photo {
   id: string;
   url: string;
   alt?: string;
+  photo_variants?: { id: string; url: string; }[];
 }
 
 export function WeddingsLayout({ photos }: { photos: Photo[] }) {
@@ -19,18 +20,16 @@ export function WeddingsLayout({ photos }: { photos: Photo[] }) {
     { name: "Guld", time: "Heldag (15 timmar)", includes: "Förberedelser, first-look, mingel, vigsel, porträtt, middag, fest", images: "Mellan 130-150 bilder", price: "25.000 kr" },
   ];
 
-  const handlePhotoClick = (photo: Photo) => {
-    const index = photos.findIndex((p) => p.id === photo.id);
-    setSelectedIndex(index);
-  };
-
   return (
     <section className="w-full flex flex-col gap-16 py-8 bg-white">
       {/* Top Gallery Section */}
       <ImageContainer
         photos={firstThree}
         variant="weddings"
-        onItemClick={handlePhotoClick}
+        onItemClick={(photo) => {
+          const index = photos.findIndex(p => p.id === photo.id);
+          setSelectedIndex(index);
+        }}
       />
 
       {/* Pricing Section */}
@@ -46,7 +45,7 @@ export function WeddingsLayout({ photos }: { photos: Photo[] }) {
           {packages.map((pkg, index) => (
             <div
               key={pkg.name}
-              style={{ animationDelay: `${(index + 1) * 200}ms` }} // Stegrad delay för paketen
+              style={{ animationDelay: `${(index + 1) * 200}ms` }}
               className={`
                 flex flex-col p-8 border border-stone-200 transition-all duration-700
                 animate-in fade-in slide-in-from-bottom-6 fill-mode-both
@@ -89,14 +88,17 @@ export function WeddingsLayout({ photos }: { photos: Photo[] }) {
       <ImageContainer
         photos={theRest}
         variant="weddings"
-        onItemClick={handlePhotoClick}
+        onItemClick={(photo) => {
+          const index = photos.findIndex(p => p.id === photo.id);
+          setSelectedIndex(index);
+        }}
       />
 
       <ImageModal
         isOpen={selectedIndex !== null}
         onClose={() => setSelectedIndex(null)}
         photos={photos}
-        currentIndex={selectedIndex ?? 0}
+        currentIndex={selectedIndex || 0}
         setCurrentIndex={setSelectedIndex}
       />
     </section>

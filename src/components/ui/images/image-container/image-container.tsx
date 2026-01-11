@@ -5,6 +5,7 @@ interface Photo {
   id: string;
   url: string;
   alt?: string;
+  photo_variants?: { id: string; url: string; }[];
 }
 
 interface ImageContainerProps {
@@ -30,13 +31,13 @@ export function ImageContainer({
     const pos = (index % 10) + 1;
     switch (pos) {
       case 1: case 2: case 3:
-        return variant === 'weddings' ? (pos === 2 ? "h-[60vh] md:w-[35vw]" : "h-[60vh] md:w-[20vw]") : "h-[65vh] md:w-[25vw]";
-      case 4: return "h-[55vh] md:w-[40vw]";
-      case 5: return "h-[55vh] md:w-[35vw]";
-      case 6: case 8: return "h-[50vh] md:w-[20vw]";
-      case 7: return "h-[50vh] md:w-[35vw]";
-      case 9: return "h-[60vh] md:w-[35vw]";
-      case 10: return "h-[60vh] md:w-[30vw]";
+        return variant === 'weddings' ? (pos === 2 ? "h-[60vh] md:w-[35vw]" : "h-[60vh] md:w-[20vw]") : "h-[70vh] md:w-[25vw]";
+      case 4: return "h-[60vh] md:w-[37vw]";
+      case 5: return "h-[60vh] md:w-[37vw]";
+      case 6: case 8: return "h-[60vh] md:w-[18vw]";
+      case 7: return "h-[60vh] md:w-[37vw]";
+      case 9: case 10:
+        return variant === 'weddings' ? (pos === 9 ? "h-[60vh] md:w-[55vw]" : "h-[60vh] md:w-[20vw]") : "h-[70vh] md:w-[35vw]";
       default: return "h-[25em] w-[35em]";
     }
   };

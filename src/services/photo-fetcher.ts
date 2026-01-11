@@ -31,7 +31,14 @@ export async function fetchPhotosByTag(tag: string | null) {
 
     const { data: dbOrder, error } = await supabase
       .from("photo_order")
-      .select("*")
+      .select(`
+        *,
+        photo_variants (
+          id,
+          url,
+          position
+        )
+      `)
       .eq("tag", tag)
       .order("position", { ascending: true });
 
@@ -40,19 +47,21 @@ export async function fetchPhotosByTag(tag: string | null) {
     const validDbOrder = (dbOrder || []).filter(item => !blacklistedIds.has(item.id));
     const sortedIds = new Set(validDbOrder.map(item => item.id));
 
-    // Slå ihop listorna
     const finalItems = [
       ...validDbOrder.map(item => ({
         id: item.id,
         url: item.url,
-        alt: `${tag} av Myelie Lendelund`
+        alt: `${tag} av Myelie Lendelund`,
+        // Här skickar vi med varianterna till ImageContainer -> ImageModal
+        photo_variants: item.photo_variants?.sort((a: any, b: any) => a.position - b.position) || []
       })),
       ...cloudResources
         .filter((r: CloudinaryResource) => !sortedIds.has(r.public_id))
         .map((r: CloudinaryResource) => ({
           id: r.public_id,
           url: `https://res.cloudinary.com/${CLOUD_NAME}/image/upload/f_auto,q_auto,c_fill,g_faces/${r.public_id}.${r.format}`,
-          alt: `${tag} av Myelie Lendelund`
+          alt: `${tag} av Myelie Lendelund`,
+          photo_variants: [] // Cloudinary-bilder som inte är i DB har inga varianter än
         }))
     ];
 

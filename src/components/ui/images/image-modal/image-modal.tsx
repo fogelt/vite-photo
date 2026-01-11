@@ -1,9 +1,15 @@
-import { useEffect, useCallback } from 'react';
+import { useEffect, useCallback, useState } from 'react';
+
+interface PhotoVariant {
+  id: string;
+  url: string;
+}
 
 interface Photo {
   id: string;
   url: string;
   alt?: string;
+  photo_variants?: PhotoVariant[];
 }
 
 interface ImageModalProps {
@@ -16,14 +22,14 @@ interface ImageModalProps {
 
 export const ImageModal = ({ isOpen, onClose, photos, currentIndex, setCurrentIndex }: ImageModalProps) => {
   const currentPhoto = photos[currentIndex];
+  const [activeUrl, setActiveUrl] = useState<string | null>(null);
 
-  const goNext = useCallback(() => {
-    setCurrentIndex((currentIndex + 1) % photos.length);
-  }, [currentIndex, photos.length, setCurrentIndex]);
+  useEffect(() => {
+    if (currentPhoto) setActiveUrl(currentPhoto.url);
+  }, [currentIndex, currentPhoto]);
 
-  const goPrev = useCallback(() => {
-    setCurrentIndex((currentIndex - 1 + photos.length) % photos.length);
-  }, [currentIndex, photos.length, setCurrentIndex]);
+  const goNext = useCallback(() => setCurrentIndex((currentIndex + 1) % photos.length), [currentIndex, photos.length, setCurrentIndex]);
+  const goPrev = useCallback(() => setCurrentIndex((currentIndex - 1 + photos.length) % photos.length), [currentIndex, photos.length, setCurrentIndex]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -38,39 +44,76 @@ export const ImageModal = ({ isOpen, onClose, photos, currentIndex, setCurrentIn
 
   if (!isOpen || !currentPhoto) return null;
 
+  const allRelated = [
+    { id: 'main', url: currentPhoto.url },
+    ...(currentPhoto.photo_variants || [])
+  ];
+
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/95 p-4 md:p-10 transition-all duration-300">
-      {/* Close Button */}
-      <button onClick={onClose} className="absolute top-6 right-6 text-white/50 hover:text-white text-4xl z-[110]">&times;</button>
+    <div className="fixed inset-0 z-[100] flex flex-col bg-black/95 transition-all duration-300">
 
-      {/* Navigation Buttons */}
-      <button
-        onClick={(e) => { e.stopPropagation(); goPrev(); }}
-        className="absolute left-4 top-1/2 -translate-y-1/2 text-white/40 hover:text-white text-5xl p-4 transition-colors z-[110]"
-      >
-        &#8249;
-      </button>
+      {/* Header - Siffra och Stäng-knapp */}
+      <div className="flex justify-between items-center p-6 md:px-10">
+        <div className="text-white/20 text-[10px] tracking-[0.4em] uppercase font-light">
+          {currentIndex + 1} / {photos.length}
+        </div>
+        <button onClick={onClose} className="text-white/40 hover:text-white text-3xl transition-colors">&times;</button>
+      </div>
 
-      <button
-        onClick={(e) => { e.stopPropagation(); goNext(); }}
-        className="absolute right-4 top-1/2 -translate-y-1/2 text-white/40 hover:text-white text-5xl p-4 transition-colors z-[110]"
-      >
-        &#8250;
-      </button>
+      {/* Main Image Viewport */}
+      <div className="relative flex-grow flex items-center justify-center px-4 md:px-20" onClick={onClose}>
+        {/* Navigation Buttons */}
+        <button
+          onClick={(e) => { e.stopPropagation(); goPrev(); }}
+          className="absolute left-4 md:left-10 top-1/2 -translate-y-1/2 text-white/20 hover:text-white text-5xl p-4 transition-all z-[110]"
+        >
+          &#8249;
+        </button>
 
-      <div className="relative w-full h-full flex items-center justify-center" onClick={onClose}>
         <img
-          key={currentPhoto?.id}
-          src={currentPhoto?.url}
+          key={activeUrl}
+          src={activeUrl || currentPhoto.url}
           alt={currentPhoto?.alt || ''}
-          className="max-w-full max-h-full object-contain shadow-2xl animate-in fade-in zoom-in-95 duration-300"
+          className="max-w-full max-h-[75vh] object-contain shadow-2xl animate-in fade-in zoom-in-95 duration-500"
           onClick={(e) => e.stopPropagation()}
         />
 
-        {/* Counter UI */}
-        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 text-white/40 text-xs tracking-widest uppercase">
-          {currentIndex + 1} / {photos.length}
-        </div>
+        <button
+          onClick={(e) => { e.stopPropagation(); goNext(); }}
+          className="absolute right-4 md:right-10 top-1/2 -translate-y-1/2 text-white/20 hover:text-white text-5xl p-4 transition-all z-[110]"
+        >
+          &#8250;
+        </button>
+      </div>
+
+      <div
+        className="w-full flex flex-col items-center justify-center min-h-[120px]"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {allRelated.length > 1 && (
+          <div className="flex gap-4">
+            {allRelated.map((img) => {
+              const isActive = activeUrl === img.url;
+              return (
+                <button
+                  key={img.id}
+                  onClick={() => setActiveUrl(img.url)}
+                  className="flex flex-col items-center gap-3 group"
+                >
+                  <div className={`
+                w-12 h-12 md:w-14 md:h-14 transition-all duration-200 overflow-hidden border
+                ${isActive
+                      ? 'border-white border-2 scale-110'
+                      : 'border-transparent opacity-50 blur-[1px] hover:opacity-100 hover:blur-0'
+                    }
+              `}>
+                    <img src={img.url} className="w-full h-full object-cover" alt="Variant preview" />
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        )}
       </div>
     </div>
   );

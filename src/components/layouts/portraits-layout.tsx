@@ -5,6 +5,7 @@ interface Photo {
   id: string;
   url: string;
   alt?: string;
+  photo_variants?: { id: string; url: string; }[];
 }
 
 export function PortraitsLayout({ photos, variant = 'default' }: { photos: Photo[], variant?: 'default' | 'weddings' }) {

@@ -21,18 +21,66 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 import { ImageContainer, Modal } from "@/components/ui";
 
-function SortablePhoto({ photo, index, onDelete }: { photo: any; index: number; onDelete: (id: string) => void }) {
+function SortablePhoto({ photo, index, onDelete, onAddVariant, onDeleteVariant }: {
+  photo: any;
+  index: number;
+  onDelete: (id: string) => void;
+  onAddVariant: (id: string) => void;
+  onDeleteVariant: (variantId: string) => void;
+}) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: photo.id });
-  const style = { transform: CSS.Transform.toString(transform), transition, zIndex: isDragging ? 50 : 1 };
+
   return (
-    <div ref={setNodeRef} style={style} className={`relative aspect-square bg-stone-50 group transition-shadow ${isDragging ? 'shadow-2xl scale-105 z-50' : ''}`}>
-      <div {...attributes} {...listeners} className="w-full h-full cursor-grab active:cursor-grabbing">
+    <div
+      ref={setNodeRef}
+      style={{ transform: CSS.Transform.toString(transform), transition }}
+      className="relative aspect-square bg-stone-50 group overflow-hidden border border-stone-100"
+    >
+      {/* Själva bilden och drag-ytan */}
+      <div {...attributes} {...listeners} className="w-full h-full cursor-grab">
         <img src={photo.url} className="w-full h-full object-cover pointer-events-none" alt="" />
       </div>
-      <button onClick={() => onDelete(photo.id)} className="absolute top-2 right-2 bg-white/90 px-2 py-1 text-[9px] font-mono text-stone-900 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-stone-900 hover:text-white">
-        TA BORT
-      </button>
-      <div className="absolute top-2 left-2 bg-white/90 px-2 py-1 text-[9px] font-mono text-stone-900 font-bold">{index + 1}</div>
+
+      {/* Sifferindikator (Högst upp till vänster) */}
+      <div className="absolute top-2 left-2 bg-white/90 px-2 py-1 text-[9px] font-mono text-stone-900 font-bold z-10">
+        {index + 1}
+      </div>
+
+      {/* Huvudknappar (Högst upp till höger) */}
+      <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity z-20">
+        <button
+          onClick={() => onAddVariant(photo.id)}
+          className="bg-white/90 px-2 py-1 text-[9px] font-mono text-stone-900 hover:bg-stone-900 hover:text-white transition-colors shadow-sm"
+        >
+          + VARIANT
+        </button>
+        <button
+          onClick={() => onDelete(photo.id)}
+          className="bg-white/90 px-2 py-1 text-[9px] font-mono text-red-700 hover:bg-red-700 hover:text-white transition-colors shadow-sm"
+        >
+          RADERA
+        </button>
+      </div>
+
+      {/* Varianter - Nu som ett overlay i nederkanten så att kvadraten inte spricker */}
+      {photo.photo_variants && photo.photo_variants.length > 0 && (
+        <div className="absolute bottom-0 left-0 right-0 p-1.5 flex flex-wrap gap-1 bg-gradient-to-t from-black/40 to-transparent">
+          {photo.photo_variants.map((variant: any) => (
+            <div key={variant.id} className="relative w-7 h-7 group/variant shrink-0">
+              <img src={variant.url} className="w-full h-full object-cover rounded-sm border border-white/20 shadow-sm" />
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDeleteVariant(variant.id);
+                }}
+                className="absolute inset-0 bg-red-600/90 text-white opacity-0 group-hover/variant:opacity-100 flex items-center justify-center text-[12px] font-bold transition-opacity rounded-sm"
+              >
+                &times;
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
@@ -77,6 +125,84 @@ export function PhotoEditor({ tag }: { tag: string }) {
     const token = await getToken({ template: "supabase" });
     if (!token) throw new Error("Kunde inte verifiera din identitet (Clerk token saknas)");
     return createClerkSupabaseClient(token);
+  };
+
+  // Inuti PhotoEditor-komponenten
+  const handleVariantUpload = async (parentId: string) => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*';
+
+    input.onchange = async (e: any) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+
+      setIsUploading(true);
+      try {
+        const formData = new FormData();
+        formData.append("file", file);
+        formData.append("upload_preset", "myelie_preset");
+        formData.append("tags", `${tag}_variant`);
+
+        const clResponse = await fetch(
+          `https://api.cloudinary.com/v1_1/dtscgoycp/image/upload`,
+          { method: "POST", body: formData }
+        );
+        const uploadedImage = await clResponse.json();
+
+        const adminClient = await getAuthenticatedClient();
+        const { error } = await adminClient
+          .from("photo_variants")
+          .insert([{
+            id: uploadedImage.public_id,
+            parent_id: parentId,
+            url: uploadedImage.secure_url,
+            position: 99
+          }]);
+
+        if (error) throw error;
+
+        await queryClient.invalidateQueries({ queryKey: ["photos", tag] });
+
+        setModalConfig({
+          isOpen: true,
+          title: "Variant tillagd",
+          message: "Bilden har länkats som en variant."
+        });
+
+      } catch (err: any) {
+        setModalConfig({ isOpen: true, title: "Fel", message: err.message });
+      } finally {
+        setIsUploading(false);
+      }
+    };
+
+    input.click();
+  };
+
+  const handleDeleteVariant = (variantId: string) => {
+    setModalConfig({
+      isOpen: true,
+      title: "Radera variant",
+      message: "Vill du ta bort denna variant? Detta går inte att ångra.",
+      type: 'danger',
+      onConfirm: async () => {
+        try {
+          const adminClient = await getAuthenticatedClient();
+          const { error } = await adminClient
+            .from("photo_variants")
+            .delete()
+            .eq("id", variantId);
+
+          if (error) throw error;
+
+          // Uppdatera UI genom att refetch eller manuellt filtrera items
+          await queryClient.invalidateQueries({ queryKey: ["photos", tag] });
+        } catch (err: any) {
+          setModalConfig({ isOpen: true, title: "Fel", message: err.message });
+        }
+      }
+    });
   };
 
   // --- Hantera Uppladdning ---
@@ -226,7 +352,14 @@ export function PhotoEditor({ tag }: { tag: string }) {
           {isRearrangeMode ? (
             <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
               {items.map((photo, index) => (
-                <SortablePhoto key={photo.id} photo={photo} index={index} onDelete={handleDelete} />
+                <SortablePhoto
+                  key={photo.id}
+                  photo={photo}
+                  index={index}
+                  onDelete={handleDelete}
+                  onAddVariant={handleVariantUpload}
+                  onDeleteVariant={handleDeleteVariant}
+                />
               ))}
             </div>
           ) : (
