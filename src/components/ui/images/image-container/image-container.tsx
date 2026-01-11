@@ -36,8 +36,8 @@ export function ImageContainer({
       case 5: return "h-[60vh] md:w-[37vw]";
       case 6: case 8: return "h-[60vh] md:w-[18vw]";
       case 7: return "h-[60vh] md:w-[37vw]";
-      case 9: case 10:
-        return variant === 'weddings' ? (pos === 9 ? "h-[60vh] md:w-[55vw]" : "h-[60vh] md:w-[20vw]") : "h-[70vh] md:w-[35vw]";
+      case 9: return "h-[60vh] md:w-[37vw]";
+      case 10: return "h-[60vh] md:w-[37vw]";
       default: return "h-[25em] w-[35em]";
     }
   };

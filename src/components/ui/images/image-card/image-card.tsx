@@ -18,7 +18,7 @@ export function ImageCard({ url, alt, className, style, onClick, onLoad }: Image
         src={url}
         alt={alt || "Fotografi Myelie Lendelund"}
         onLoad={onLoad} // Triggar funktionen i ImageContainer när filen är hämtad
-        className="h-full w-full object-cover object-[center_25%] transition-transform duration-700 ease-out group-hover:scale-105"
+        className="h-full w-full object-cover object-[center_70%] transition-transform duration-700 ease-out group-hover:scale-105"
       />
       <div className="absolute inset-0 bg-black/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
     </div>
