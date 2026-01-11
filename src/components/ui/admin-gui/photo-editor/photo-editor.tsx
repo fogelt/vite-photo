@@ -62,7 +62,6 @@ function SortablePhoto({ photo, index, onDelete, onAddVariant, onDeleteVariant }
         </button>
       </div>
 
-      {/* Varianter - Nu som ett overlay i nederkanten så att kvadraten inte spricker */}
       {photo.photo_variants && photo.photo_variants.length > 0 && (
         <div className="absolute bottom-0 left-0 right-0 p-1.5 flex flex-wrap gap-1 bg-gradient-to-t from-black/40 to-transparent">
           {photo.photo_variants.map((variant: any) => (
@@ -127,7 +126,6 @@ export function PhotoEditor({ tag }: { tag: string }) {
     return createClerkSupabaseClient(token);
   };
 
-  // Inuti PhotoEditor-komponenten
   const handleVariantUpload = async (parentId: string) => {
     const input = document.createElement('input');
     input.type = 'file';
@@ -184,7 +182,7 @@ export function PhotoEditor({ tag }: { tag: string }) {
     setModalConfig({
       isOpen: true,
       title: "Radera variant",
-      message: "Vill du ta bort denna variant? Detta går inte att ångra.",
+      message: "Vill du ta bort denna variant?",
       type: 'danger',
       onConfirm: async () => {
         try {
