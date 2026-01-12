@@ -43,9 +43,7 @@ export const createAppRouter = (queryClient: QueryClient) =>
         },
       ],
     }
-  ], {
-    basename: '/',
-  });
+  ]);
 
 export const AppRouter = () => {
   const queryClient = useQueryClient();
