@@ -44,7 +44,7 @@ export const createAppRouter = (queryClient: QueryClient) =>
       ],
     }
   ], {
-    basename: '/vite-photo',
+    basename: '/',
   });
 
 export const AppRouter = () => {

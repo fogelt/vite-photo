@@ -5,7 +5,7 @@ import path from 'path';
 
 // https://vitejs.dev/config/
 export default defineConfig({
-  base: '/vite-photo/', //change to '/' on paid domain
+  base: '/', //change to '/' on paid domain
   plugins: [
     react()
   ],
