@@ -29,17 +29,18 @@ import {
   uploadAndSaveVariant,
   deletePhoto,
   deletePhotoVariant,
-  updatePhotoOrder
+  updatePhotoOrder,
+  updatePhotoDescription
 } from "./api/photo-actions";
 
 // --- SUB-COMPONENTS ---
-
-function SortablePhoto({ photo, index, onDelete, onAddVariant, onDeleteVariant }: {
+function SortablePhoto({ photo, index, onDelete, onAddVariant, onDeleteVariant, onUpdateDescription }: {
   photo: any;
   index: number;
   onDelete: (id: string) => void;
   onAddVariant: (id: string) => void;
   onDeleteVariant: (variantId: string) => void;
+  onUpdateDescription: (id: string, text: string) => void;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id: photo.id });
 
@@ -47,49 +48,64 @@ function SortablePhoto({ photo, index, onDelete, onAddVariant, onDeleteVariant }
     <div
       ref={setNodeRef}
       style={{ transform: CSS.Transform.toString(transform), transition }}
-      className="relative aspect-square bg-stone-50 group overflow-hidden border border-stone-100 rounded-sm shadow-sm"
+      // Outer wrapper is flex-col, it will grow naturally but the image stays square
+      className="relative flex flex-col bg-white border border-stone-100 rounded-sm shadow-sm overflow-hidden group"
     >
-      <div {...attributes} {...listeners} className="w-full h-full cursor-grab active:cursor-grabbing">
-        <img src={photo.url} className="w-full h-full object-cover pointer-events-none" alt="" />
-      </div>
-
-      <div className="absolute top-2 left-2 bg-white/90 px-2 py-1 text-[9px] font-mono text-stone-900 font-bold z-10 rounded-sm shadow-sm">
-        {index + 1}
-      </div>
-
-      <div className="absolute top-2 right-2 flex flex-col gap-1 opacity-0 group-hover:opacity-100 transition-opacity z-20">
-        <button
-          onClick={() => onAddVariant(photo.id)}
-          className="bg-white/95 px-2 py-1 text-[8px] font-mono text-stone-900 hover:bg-stone-900 hover:text-white transition-colors shadow-sm rounded-sm uppercase tracking-wider"
-        >
-          + Variant
-        </button>
-        <button
-          onClick={() => onDelete(photo.id)}
-          className="bg-white/95 px-2 py-1 text-[8px] font-mono text-red-700 hover:bg-red-700 hover:text-white transition-colors shadow-sm rounded-sm uppercase tracking-wider"
-        >
-          Radera
-        </button>
-      </div>
-
-      {photo.photo_variants && photo.photo_variants.length > 0 && (
-        <div className="absolute bottom-0 left-0 right-0 p-1.5 flex flex-wrap gap-1 bg-white/90 border-t border-stone-100">
-          {photo.photo_variants.map((variant: any) => (
-            <div key={variant.id} className="relative w-8 h-8 group/variant shrink-0">
-              <img src={variant.url} className="w-full h-full object-cover rounded-sm border border-stone-200" />
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onDeleteVariant(variant.id);
-                }}
-                className="absolute -top-1 -right-1 w-4 h-4 bg-red-600 text-white opacity-0 group-hover/variant:opacity-100 flex items-center justify-center text-[10px] font-bold transition-opacity rounded-full shadow-sm z-30"
-              >
-                &times;
-              </button>
-            </div>
-          ))}
+      {/* 1. Square Image Container */}
+      <div className="relative aspect-square w-full bg-stone-50 overflow-hidden">
+        <div {...attributes} {...listeners} className="w-full h-full cursor-grab active:cursor-grabbing">
+          <img src={photo.url} className="w-full h-full object-cover pointer-events-none" alt="" />
         </div>
-      )}
+
+        {/* Index Badge */}
+        <div className="absolute top-1.5 left-1.5 bg-white/90 px-1.5 py-0.5 text-[8px] font-mono text-stone-900 font-bold z-10 rounded-sm shadow-sm">
+          {index + 1}
+        </div>
+
+        {/* Buttons (Top Right) */}
+        <div className="absolute top-1.5 right-1.5 flex flex-col gap-1 opacity-0 group-hover:opacity-100 transition-opacity z-20">
+          <button
+            onClick={() => onAddVariant(photo.id)}
+            className="bg-white/95 px-2 py-0.5 text-[7px] font-mono text-stone-900 hover:bg-stone-900 hover:text-white transition-colors shadow-sm rounded-sm uppercase tracking-wider"
+          >
+            + Variant
+          </button>
+          <button
+            onClick={() => onDelete(photo.id)}
+            className="bg-white/95 px-2 py-0.5 text-[7px] font-mono text-red-700 hover:bg-red-700 hover:text-white transition-colors shadow-sm rounded-sm uppercase tracking-wider"
+          >
+            Radera
+          </button>
+        </div>
+
+        {photo.photo_variants && photo.photo_variants.length > 0 && (
+          <div className="absolute bottom-0 left-0 right-0 p-1 flex flex-wrap gap-1 bg-white/60 backdrop-blur-sm border-t border-stone-100/50 z-10">
+            {photo.photo_variants.map((variant: any) => (
+              <div key={variant.id} className="relative w-5 h-5 group/variant shrink-0">
+                <img src={variant.url} className="w-full h-full object-cover rounded-sm border border-stone-200 shadow-sm" />
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onDeleteVariant(variant.id);
+                  }}
+                  className="absolute -top-1 -right-1 w-3 h-3 bg-red-600 text-white opacity-0 group-hover/variant:opacity-100 flex items-center justify-center text-[7px] font-bold transition-opacity rounded-full shadow-sm z-30"
+                >
+                  &times;
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      <div className="p-1.5 bg-white border-t border-stone-50">
+        <textarea
+          placeholder="Beskrivning..."
+          className="w-full text-[8px] bg-stone-50/50 border border-stone-100 focus:border-stone-200 focus:ring-0 outline-none p-1 resize-none font-sans text-stone-600 leading-tight h-7 rounded-sm transition-colors placeholder:text-stone-300"
+          value={photo.description || ""}
+          onChange={(e) => onUpdateDescription(photo.id, e.target.value)}
+        />
+      </div>
     </div>
   );
 }
@@ -137,8 +153,6 @@ export function PhotoEditor({ tag }: { tag: string }) {
   const [items, setItems] = useState<any[]>([]);
   const [isSaving, setIsSaving] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
-
-  // Note: Removed isRearrangeMode state as we now show both views simultaneously
 
   const [modalConfig, setModalConfig] = useState<{
     isOpen: boolean; title: string; message: string; type?: 'info' | 'danger'; onConfirm?: () => void;
@@ -254,20 +268,31 @@ export function PhotoEditor({ tag }: { tag: string }) {
     });
   };
 
+  const handleDescriptionChange = (id: string, text: string) => {
+    setItems(prev => prev.map(item => item.id === id ? { ...item, description: text } : item));
+  };
+
   const saveOrder = async () => {
     setIsSaving(true);
-    const updates = items.map((item, index) => ({
-      id: item.id,
-      tag: tag,
-      position: index,
-      url: item.url
-    }));
-
     try {
       const token = await getAuthToken();
-      await updatePhotoOrder(token, updates);
+
+      const orderUpdates = items.map((item, index) => ({
+        id: item.id,
+        tag: tag,
+        position: index,
+        url: item.url
+      }));
+      await updatePhotoOrder(token, orderUpdates);
+
+      const descriptionPromises = items.map(item =>
+        updatePhotoDescription(token, item.id, item.description || "")
+      );
+
+      await Promise.all(descriptionPromises);
+
       await queryClient.invalidateQueries({ queryKey: ["photos", tag] });
-      setModalConfig({ isOpen: true, title: "Sparat", message: "Den nya ordningen är sparad." });
+      setModalConfig({ isOpen: true, title: "Sparat", message: "Ändringarna har sparats!" });
     } catch (err: any) {
       setModalConfig({ isOpen: true, title: "Fel vid sparande", message: err.message });
     } finally {
@@ -325,6 +350,7 @@ export function PhotoEditor({ tag }: { tag: string }) {
                     onDelete={handleDelete}
                     onAddVariant={handleVariantUpload}
                     onDeleteVariant={handleDeleteVariant}
+                    onUpdateDescription={handleDescriptionChange}
                   />
                 ))}
               </div>

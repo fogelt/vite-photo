@@ -139,3 +139,12 @@ export const uploadAndSaveVariant = async (
     position: 99
   });
 };
+
+export const updatePhotoDescription = async (token: string, photoId: string, description: string) => {
+  const client = createClerkSupabaseClient(token);
+  const { error } = await client
+    .from("photo_descriptions")
+    .upsert({ photo_id: photoId, description: description }, { onConflict: 'photo_id' });
+
+  if (error) throw error;
+};

@@ -9,6 +9,7 @@ interface Photo {
   id: string;
   url: string;
   alt?: string;
+  description?: string;
   photo_variants?: PhotoVariant[];
 }
 
@@ -52,8 +53,8 @@ export const ImageModal = ({ isOpen, onClose, photos, currentIndex, setCurrentIn
   return (
     <div className="fixed inset-0 z-[100] flex flex-col bg-black/95 transition-all duration-300">
 
-      {/* Header - Siffra och Stäng-knapp */}
-      <div className="flex justify-between items-center p-6 md:px-10">
+      {/* Header */}
+      <div className="flex justify-between items-center p-6 md:px-10 z-[120]">
         <div className="text-white/20 text-[10px] tracking-[0.4em] uppercase font-light">
           {currentIndex + 1} / {photos.length}
         </div>
@@ -62,6 +63,7 @@ export const ImageModal = ({ isOpen, onClose, photos, currentIndex, setCurrentIn
 
       {/* Main Image Viewport */}
       <div className="relative flex-grow flex items-center justify-center px-4 md:px-20" onClick={onClose}>
+
         {/* Navigation Buttons */}
         <button
           onClick={(e) => { e.stopPropagation(); goPrev(); }}
@@ -70,13 +72,42 @@ export const ImageModal = ({ isOpen, onClose, photos, currentIndex, setCurrentIn
           &#8249;
         </button>
 
-        <img
-          key={activeUrl}
-          src={activeUrl || currentPhoto.url}
-          alt={currentPhoto?.alt || ''}
-          className="max-w-full max-h-[75vh] object-contain shadow-2xl animate-in fade-in zoom-in-95 duration-500"
-          onClick={(e) => e.stopPropagation()}
-        />
+        <div className="relative group flex flex-col items-center" onClick={(e) => e.stopPropagation()}>
+
+          {/* 1. Variants - Floating OVER the image */}
+          {allRelated.length > 1 && (
+            <div className="absolute -top-16 left-1/2 -translate-x-1/2 flex gap-3 z-[120] animate-in fade-in slide-in-from-top-4 duration-500">
+              {allRelated.map((img) => {
+                const isActive = activeUrl === img.url;
+                return (
+                  <button
+                    key={img.id}
+                    onClick={() => setActiveUrl(img.url)}
+                    className="transition-transform active:scale-95"
+                  >
+                    <div className={`
+                      w-10 h-10 md:w-12 md:h-12 transition-all duration-300 overflow-hidden border
+                      ${isActive
+                        ? 'border-white border-2 scale-110 shadow-lg'
+                        : 'border-white/20 opacity-40 blur-[0.5px] hover:opacity-100 hover:blur-0'
+                      }
+                    `}>
+                      <img src={img.url} className="w-full h-full object-cover" alt="Variant" />
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          )}
+
+          {/* Main Image */}
+          <img
+            key={activeUrl}
+            src={activeUrl || currentPhoto.url}
+            alt={currentPhoto?.alt || ''}
+            className="max-w-full max-h-[65vh] md:max-h-[70vh] object-contain shadow-2xl animate-in fade-in zoom-in-95 duration-500"
+          />
+        </div>
 
         <button
           onClick={(e) => { e.stopPropagation(); goNext(); }}
@@ -86,32 +117,16 @@ export const ImageModal = ({ isOpen, onClose, photos, currentIndex, setCurrentIn
         </button>
       </div>
 
+      {/* 2. Photo Description Area - Bottom */}
       <div
-        className="w-full flex flex-col items-center justify-center min-h-[120px]"
+        className="w-full flex items-center justify-center py-10 min-h-[120px] z-[120]"
         onClick={(e) => e.stopPropagation()}
       >
-        {allRelated.length > 1 && (
-          <div className="flex gap-4">
-            {allRelated.map((img) => {
-              const isActive = activeUrl === img.url;
-              return (
-                <button
-                  key={img.id}
-                  onClick={() => setActiveUrl(img.url)}
-                  className="flex flex-col items-center gap-3 group"
-                >
-                  <div className={`
-                w-12 h-12 md:w-14 md:h-14 transition-all duration-200 overflow-hidden border
-                ${isActive
-                      ? 'border-white border-2 scale-110'
-                      : 'border-transparent opacity-50 blur-[1px] hover:opacity-100 hover:blur-0'
-                    }
-              `}>
-                    <img src={img.url} className="w-full h-full object-cover" alt="Variant preview" />
-                  </div>
-                </button>
-              );
-            })}
+        {currentPhoto.description && (
+          <div className="max-w-xl px-8 text-center animate-in fade-in slide-in-from-bottom-4 duration-1000">
+            <p className="text-white/50 font-light text-[11px] md:text-xs leading-relaxed tracking-[0.15em] uppercase italic">
+              {currentPhoto.description}
+            </p>
           </div>
         )}
       </div>
