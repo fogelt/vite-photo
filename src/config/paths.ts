@@ -6,4 +6,3 @@ export const paths = {
   articles: { path: '/articles' },
   admin: { patk: '/admin' }
 } as const;
-
