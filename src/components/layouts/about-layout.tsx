@@ -35,10 +35,7 @@ export function AboutLayout({ image, isLoading }: AboutLayoutProps) {
             <h2 className="text-[11px] uppercase tracking-[0.4em] text-stone-400">
               Om mig
             </h2>
-            <h1 className="text-3xl md:text-4xl font-light text-stone-900 leading-tight">
-              Mitt namn är <br />
-              <span className="font-normal">Myelie Lendelund</span>
-            </h1>
+            <span className="font-normal">Myelie Lendelund</span>
           </div>
 
           <div className="space-y-6 text-stone-600 font-light leading-relaxed text-sm md:text-base">
