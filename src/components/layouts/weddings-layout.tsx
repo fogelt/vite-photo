@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/services";
 import { ImageContainer, ImageModal } from '@/components/ui';
 
 interface Photo {
@@ -8,17 +10,35 @@ interface Photo {
   photo_variants?: { id: string; url: string; }[];
 }
 
+interface WeddingPackage {
+  id: string;
+  name: string;
+  time: string;
+  includes: string;
+  images: string;
+  price: string;
+  highlight: boolean;
+}
+
 export function WeddingsLayout({ photos }: { photos: Photo[] }) {
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
 
+  // Fetch dynamic packages from Supabase
+  const { data: packages, isLoading: pricingLoading } = useQuery({
+    queryKey: ["wedding_packages"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("wedding_packages")
+        .select("*")
+        .order("sort_order", { ascending: true });
+
+      if (error) throw error;
+      return data as WeddingPackage[];
+    }
+  });
+
   const firstThree = photos.slice(0, 3);
   const theRest = photos.slice(3);
-
-  const packages = [
-    { name: "Brons", time: "3 timmar bevakning", includes: "Mingel, vigsel, porträtt", images: "Mellan 30-40 bilder", price: "8.000 kr" },
-    { name: "Silver", time: "10 timmar bevakning", includes: "Mingel, vigsel, porträtt, middag, fest", images: "Mellan 80-110 bilder", price: "20.000 kr", highlight: true },
-    { name: "Guld", time: "Heldag (15 timmar)", includes: "Förberedelser, first-look, mingel, vigsel, porträtt, middag, fest", images: "Mellan 130-150 bilder", price: "25.000 kr" },
-  ];
 
   return (
     <section className="w-full flex flex-col gap-16 py-8 bg-white">
@@ -42,45 +62,55 @@ export function WeddingsLayout({ photos }: { photos: Photo[] }) {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          {packages.map((pkg, index) => (
-            <div
-              key={pkg.name}
-              style={{ animationDelay: `${(index + 1) * 200}ms` }}
-              className={`
-                flex flex-col p-8 border border-stone-200 transition-all duration-700
-                animate-in fade-in slide-in-from-bottom-6 fill-mode-both
-                ${pkg.highlight ? 'bg-stone-50/50 shadow-sm ring-1 ring-stone-200 scale-[1.02] md:scale-105 z-10' : 'bg-white hover:shadow-md'}
-              `}
-            >
-              <h3 className="font-light tracking-[0.2em] uppercase text-base mb-4 text-stone-800">
-                {pkg.name}
-              </h3>
+          {pricingLoading ? (
+            // Skeleton loader while fetching packages
+            [...Array(3)].map((_, i) => (
+              <div key={i} className="h-[400px] bg-stone-50 animate-pulse border border-stone-100" />
+            ))
+          ) : (
+            packages?.map((pkg, index) => (
+              <div
+                key={pkg.id}
+                style={{ animationDelay: `${(index + 1) * 200}ms` }}
+                className={`
+                  flex flex-col p-8 border border-stone-200 transition-all duration-700
+                  animate-in fade-in slide-in-from-bottom-6 fill-mode-both
+                  ${pkg.highlight
+                    ? 'bg-stone-50/50 shadow-sm ring-1 ring-stone-200 scale-[1.02] md:scale-105 z-10'
+                    : 'bg-white hover:shadow-md'
+                  }
+                `}
+              >
+                <h3 className="font-light tracking-[0.2em] uppercase text-base mb-4 text-stone-800">
+                  {pkg.name}
+                </h3>
 
-              <div className="flex-grow flex flex-col gap-4">
-                <div className="space-y-1">
-                  <p className="text-[11px] uppercase tracking-wider text-stone-400 font-semibold">Tid</p>
-                  <p className="text-xs text-stone-600 leading-relaxed">{pkg.time}</p>
+                <div className="flex-grow flex flex-col gap-4">
+                  <div className="space-y-1">
+                    <p className="text-[11px] uppercase tracking-wider text-stone-400 font-semibold">Tid</p>
+                    <p className="text-xs text-stone-600 leading-relaxed">{pkg.time}</p>
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-[11px] uppercase tracking-wider text-stone-400 font-semibold">Ingår</p>
+                    <p className="text-xs text-stone-600 leading-relaxed whitespace-pre-line">{pkg.includes}</p>
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-[11px] uppercase tracking-wider text-stone-400 font-semibold">Leverans</p>
+                    <p className="text-xs text-stone-600 leading-relaxed">{pkg.images}</p>
+                  </div>
                 </div>
-                <div className="space-y-1">
-                  <p className="text-[11px] uppercase tracking-wider text-stone-400 font-semibold">Ingår</p>
-                  <p className="text-xs text-stone-600 leading-relaxed">{pkg.includes}</p>
-                </div>
-                <div className="space-y-1">
-                  <p className="text-[11px] uppercase tracking-wider text-stone-400 font-semibold">Leverans</p>
-                  <p className="text-xs text-stone-600 leading-relaxed">{pkg.images}</p>
+
+                <div className="mt-10 pt-6 border-t border-stone-300">
+                  <p className="text-lg font-light tracking-tight text-stone-900">
+                    {pkg.price}
+                  </p>
+                  <p className="text-[10px] text-stone-400 uppercase tracking-tighter">
+                    inkl. moms
+                  </p>
                 </div>
               </div>
-
-              <div className="mt-10 pt-6 border-t border-stone-300">
-                <p className="text-lg font-light tracking-tight text-stone-900">
-                  {pkg.price}
-                </p>
-                <p className="text-[10px] text-stone-400 uppercase tracking-tighter">
-                  inkl. moms
-                </p>
-              </div>
-            </div>
-          ))}
+            ))
+          )}
         </div>
       </div>
 

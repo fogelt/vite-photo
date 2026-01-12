@@ -31,13 +31,13 @@ export function ImageContainer({
     const pos = (index % 10) + 1;
     switch (pos) {
       case 1: case 2: case 3:
-        return variant === 'weddings' ? (pos === 2 ? "h-[60vh] md:w-[35vw]" : "h-[60vh] md:w-[20vw]") : "h-[70vh] md:w-[25vw]";
+        return variant === 'weddings' ? (pos === 2 ? "md:h-[60vh] md:w-[35vw]" : "h-[60vh] md:w-[20vw]") : "h-[70vh] md:w-[25vw]";
       case 4: return "md:h-[60vh] md:w-[37vw]";
       case 5: return "md:h-[60vh] md:w-[37vw]";
       case 6: case 8: return "h-[60vh] md:w-[18vw]";
       case 7: return "md:h-[60vh] md:w-[37vw]";
-      case 9: return "h-[60vh] md:w-[37vw]";
-      case 10: return "h-[60vh] md:w-[37vw]";
+      case 9: return "md:h-[60vh] md:w-[37vw]";
+      case 10: return "md:h-[60vh] md:w-[37vw]";
       default: return "h-[25em] w-[35em]";
     }
   };

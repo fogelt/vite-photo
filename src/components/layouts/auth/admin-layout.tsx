@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ArticleAdmin, PhotoEditor } from "@/components/ui";
+import { ArticleAdmin, PhotoEditor, AboutAdmin, WeddingAdmin } from "@/components/ui";
 
 function AdminCard({ title, description, onClick, isActive }: { title: string; description: string; onClick: () => void, isActive: boolean }) {
   return (
@@ -19,53 +19,90 @@ function AdminCard({ title, description, onClick, isActive }: { title: string; d
 export function AdminLayout() {
   const [activeTab, setActiveTab] = useState<string | null>(null);
   const [isArticleEditorOpen, setIsArticleEditorOpen] = useState(false);
+  const [isAboutTextEditorOpen, setIsAboutTextEditorOpen] = useState(false);
+  const [isWeddingEditorOpen, setIsWeddingEditorOpen] = useState(false); // New state
 
-  const handleTabClick = (tag: string) => {
+  // Helper to close all full-screen editors
+  const closeAllEditors = () => {
     setIsArticleEditorOpen(false);
-    setActiveTab(activeTab === tag ? null : tag);
+    setIsAboutTextEditorOpen(false);
+    setIsWeddingEditorOpen(false);
+    setActiveTab(null);
   };
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-20 animate-in fade-in duration-700">
-      <header className="mb-12 flex justify-between items-end">
-        <div>
-          <h2 className="text-lg font-light uppercase tracking-[0.3em]">Kontrollpanel</h2>
-          <p className="text-xs text-stone-400 mt-2 uppercase tracking-widest font-medium">Inloggad som Myelie</p>
-        </div>
-      </header>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-20">
-        {["portfolio", "weddings", "portraits", "about"].map((tag) => (
-          <AdminCard
-            key={tag}
-            title={tag === 'weddings' ? 'Bröllop' : tag === 'portraits' ? 'Porträtt' : tag === 'about' ? 'Om mig' : 'Portfölj'}
-            description={`Hantera ${tag}`}
-            isActive={activeTab === tag}
-            onClick={() => handleTabClick(tag)}
-          />
-        ))}
+      <div className="mb-16">
+        <h1 className="text-2xl font-light uppercase tracking-[0.4em] text-stone-900">Kontrollpanel</h1>
+        <p className="text-[10px] text-stone-400 uppercase tracking-widest mt-2 font-bold">Välkommen tillbaka, Myelie</p>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-20">
+        {/* Gallerier */}
+        <AdminCard
+          title="Bildgallerier"
+          description="Hantera foton i alla sektioner"
+          isActive={!!activeTab}
+          onClick={() => {
+            closeAllEditors();
+            setActiveTab('portfolio');
+          }}
+        />
+
+        {/* New Wedding Pricing Card */}
+        <AdminCard
+          title="Bröllopspaket"
+          description="Ändra priser och innehåll i korten"
+          isActive={isWeddingEditorOpen}
+          onClick={() => {
+            closeAllEditors();
+            setIsWeddingEditorOpen(true);
+          }}
+        />
 
         <AdminCard
           title="Artiklar"
-          description="Press & Reportage"
+          description="Hantera press & reportage"
           isActive={isArticleEditorOpen}
           onClick={() => {
-            setActiveTab(null);
+            closeAllEditors();
             setIsArticleEditorOpen(true);
+          }}
+        />
+
+        <AdminCard
+          title="Om Mig"
+          description="Redigera biografi och kontakt"
+          isActive={isAboutTextEditorOpen}
+          onClick={() => {
+            closeAllEditors();
+            setIsAboutTextEditorOpen(true);
           }}
         />
       </div>
 
-      {/* Om en artikelredigerare är öppen visas den som en modal/overlay */}
+      {/* Full-screen Overlay Editors */}
       {isArticleEditorOpen && <ArticleAdmin onClose={() => setIsArticleEditorOpen(false)} />}
+      {isAboutTextEditorOpen && <AboutAdmin onClose={() => setIsAboutTextEditorOpen(false)} />}
+      {isWeddingEditorOpen && <WeddingAdmin onClose={() => setIsWeddingEditorOpen(false)} />}
 
-      {/* Om en bild-tagg är vald visas PhotoEditor under korten */}
-      {activeTab && !isArticleEditorOpen && (
-        <div className="animate-in slide-in-from-bottom-4 duration-500">
-          <div className="flex items-center gap-4 mb-4">
-            <h2 className="text-[11px] uppercase tracking-[0.4em] font-bold text-stone-900">
-              Redigerar: {activeTab}
-            </h2>
+      {/* Inline Photo Editor */}
+      {activeTab && (
+        <div className="animate-in slide-in-from-bottom-4 duration-700">
+          <div className="flex gap-8 mb-8 border-b border-stone-100 pb-4">
+            {["portfolio", "weddings", "portraits", "about"].map(t => (
+              <button
+                key={t}
+                onClick={() => setActiveTab(t)}
+                className={`text-[10px] uppercase tracking-widest transition-all ${activeTab === t
+                  ? 'font-bold border-b border-stone-900 text-stone-900'
+                  : 'text-stone-400 hover:text-stone-600'
+                  }`}
+              >
+                {t === 'portfolio' ? 'Portfölj' : t === 'weddings' ? 'Bröllop' : t === 'portraits' ? 'Porträtt' : 'Om mig'}
+              </button>
+            ))}
           </div>
           <PhotoEditor tag={activeTab} />
         </div>
