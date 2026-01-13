@@ -1,4 +1,6 @@
 import { Instagram, Linkedin, Mail, MapPin, Camera } from 'lucide-react';
+import { AdminButton } from '@/components/ui';
+
 
 export function Footer() {
   const currentYear = new Date().getFullYear();
@@ -6,7 +8,7 @@ export function Footer() {
   return (
     <footer className="w-full py-12 border-t border-gray-300 bg-white">
       <div className="flex flex-col items-center justify-center gap-6">
-
+        <AdminButton />
         {/* Social Icons Row */}
         <div className="flex items-center gap-8 text-gray-500">
           <a
@@ -41,7 +43,7 @@ export function Footer() {
           {/* Left Side: Specialty */}
           <div className="flex items-center gap-2">
             <Camera size={12} strokeWidth={1.2} />
-            <span>Fotografi</span>
+            <span>Fotograf</span>
           </div>
 
           <span className="text-gray-200 hidden sm:block">|</span>

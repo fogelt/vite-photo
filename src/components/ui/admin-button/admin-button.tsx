@@ -3,8 +3,9 @@ import { Link } from "react-router-dom";
 
 export function AdminButton() {
   return (
-    <div className="absolute left-4 md:left-8 top-1/2 -translate-y-1/2 z-[70]">
-      {/* Signed In State: Always visible or slightly dimmed */}
+    <div className="hidden lg:flex absolute left-8 top-1/2 -translate-y-1/2 z-[70]">
+
+      {/* Signed In State */}
       <SignedIn>
         <Link to="/admin" className="flex flex-col items-center gap-1 group">
           <UserButton
@@ -20,7 +21,7 @@ export function AdminButton() {
         </Link>
       </SignedIn>
 
-      {/* Signed Out State: Invisible until hover */}
+      {/* Signed Out State */}
       <SignedOut>
         <Link
           to="/admin"

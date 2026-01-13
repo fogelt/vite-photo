@@ -83,10 +83,6 @@ export async function fetchPhotosByTag(tag: string | null) {
         }))
     ];
 
-    if (finalItems.length > 0) {
-      console.log(`Fetch success [${tag}]:`, finalItems[0]);
-    }
-
     return finalItems;
   } catch (err) {
     console.error("Fetch error:", err);
