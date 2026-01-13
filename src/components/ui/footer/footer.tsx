@@ -15,25 +15,28 @@ export function Footer() {
             href="https://www.instagram.com/myelielendelund/"
             target="_blank"
             rel="noopener noreferrer"
-            className="hover:text-black transition-colors"
+            className="hover:text-black transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-black rounded-sm outline-none"
+            aria-label="Följ Myelie Foto på Instagram (öppnas i ny flik)"
           >
-            <Instagram size={16} strokeWidth={1.2} />
+            <Instagram size={16} strokeWidth={1.2} aria-hidden="true" />
           </a>
 
           <a
             href="https://www.linkedin.com/in/myelie-lendelund-3696b3380/"
             target="_blank"
             rel="noopener noreferrer"
-            className="hover:text-black transition-colors"
+            className="hover:text-black transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-black rounded-sm outline-none"
+            aria-label="Myelie Lendelund på LinkedIn (öppnas i ny flik)"
           >
-            <Linkedin size={16} strokeWidth={1.2} />
+            <Linkedin size={16} strokeWidth={1.2} aria-hidden="true" />
           </a>
 
           <a
             href="mailto:myelie@live.se"
-            className="hover:text-black transition-colors"
+            className="hover:text-black transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-black rounded-sm outline-none"
+            aria-label="Skicka ett e-postmeddelande till Myelie"
           >
-            <Mail size={16} strokeWidth={1.2} />
+            <Mail size={16} strokeWidth={1.2} aria-hidden="true" />
           </a>
         </div>
 

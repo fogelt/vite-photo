@@ -25,6 +25,13 @@ export const createAppRouter = (queryClient: QueryClient) =>
       path: '/',
       element: <AppRoot />,
       ErrorBoundary: AppRootErrorBoundary,
+      HydrateFallback: () => (
+        <div className="flex h-screen items-center justify-center">
+          <span className="text-[10px] uppercase tracking-widest text-stone-400">
+            Laddar...
+          </span>
+        </div>
+      ),
       children: [
         { index: true, lazy: () => import('./routes/app/portfolio').then(convert(queryClient)) },
         { path: paths.portraits.path, lazy: () => import('./routes/app/portraits').then(convert(queryClient)) },
