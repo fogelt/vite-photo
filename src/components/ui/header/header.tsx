@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Menu, X } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { NavLink, AdminButton } from '@/components/ui';
+import { NavLink } from '@/components/ui';
 
 export function Header() {
   const [isOpen, setIsOpen] = useState(false);

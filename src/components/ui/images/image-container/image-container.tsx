@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { ImageCard } from '@/components/ui';
+import { Images } from 'lucide-react';
 
 interface Photo {
   id: string;
@@ -68,6 +69,7 @@ export function ImageContainer({
               }}
               onClick={() => onItemClick?.(photo)}
               onLoad={() => handleImageLoad(photo.id)}
+              has_variant={photo.photo_variants?.length ? <Images size={15} /> : null}
             />
           </div>
         );
