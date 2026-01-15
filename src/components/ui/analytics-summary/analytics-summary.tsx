@@ -41,7 +41,7 @@ export function AnalyticsSummary() {
         <MousePointer2 size={15} className="text-stone-400" />
         <div className="flex flex-col">
           <span className="text-[14px] font-medium leading-none text-stone-900">{stats?.totalVisits ?? 0}</span>
-          <span className="text-[8px] uppercase tracking-tighter text-stone-400">Besökare</span>
+          <span className="text-[8px] uppercase tracking-tighter text-stone-400">Händelser</span>
         </div>
       </div>
 
@@ -50,7 +50,7 @@ export function AnalyticsSummary() {
         <Users size={15} className="text-stone-400" />
         <div className="flex flex-col">
           <span className="text-[14px] font-medium leading-none text-stone-900">{stats?.uniqueUsers ?? 0}</span>
-          <span className="text-[8px] uppercase tracking-tighter text-stone-400">Unika</span>
+          <span className="text-[8px] uppercase tracking-tighter text-stone-400">Unika besökare</span>
         </div>
       </div>
 
