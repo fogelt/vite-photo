@@ -12,21 +12,6 @@ interface AboutLayoutProps {
 // Grouped data for the tabs
 const CATEGORIES = ["Utbildningar", "Utställningar", "Meriter"];
 
-const CREDENTIALS_DATA = {
-  Utbildningar: [
-    { text: "Nordens Fotoskola", sub: "Biskops Arnö, 2023-2026" },
-    { text: "Grundläggande Fotografi", sub: "Kulturama, 2021" }
-  ],
-  Utställningar: [
-    { text: "Vårutställningen", sub: "ABC Huset, 2023" },
-    { text: "Ljus & Skugga", sub: "Galleri Kontrast, 2022" }
-  ],
-  Meriter: [
-    { text: "Frilansande Fotograf", sub: "Egen verksamhet, 2021-Nuvarande" },
-    { text: "Fotoassistent", sub: "Studio X, 2020" }
-  ]
-};
-
 export function AboutLayout({ image, isLoading: isImageLoading }: AboutLayoutProps) {
   const [imageLoaded, setImageLoaded] = useState(false);
   const [activeTab, setActiveTab] = useState(CATEGORIES[0]);
@@ -39,7 +24,19 @@ export function AboutLayout({ image, isLoading: isImageLoading }: AboutLayoutPro
     }
   });
 
+  const { data: credentials, isLoading: isCredsLoading } = useQuery({
+    queryKey: ["about_credentials"],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("about_credentials")
+        .select("*")
+        .order('sort_order', { ascending: true });
+      return data || [];
+    }
+  });
+
   const isLoading = isImageLoading || isTextLoading;
+  const activeItems = credentials?.filter(item => item.category === activeTab) || [];
 
   return (
     <section className="max-w-6xl mx-auto px-6 py-16 md:py-24">
@@ -118,12 +115,16 @@ export function AboutLayout({ image, isLoading: isImageLoading }: AboutLayoutPro
                 key={activeTab}
                 className="space-y-6 animate-in fade-in slide-in-from-left-4 duration-700 ease-out"
               >
-                {CREDENTIALS_DATA[activeTab as keyof typeof CREDENTIALS_DATA].map((item, i) => (
-                  <div key={i} className="group">
-                    <p className="text-stone-900 text-sm font-medium">{item.text}</p>
-                    <p className="text-stone-500 text-xs italic">{item.sub}</p>
-                  </div>
-                ))}
+                {activeItems.length > 0 ? (
+                  activeItems.map((item) => (
+                    <div key={item.id} className="group">
+                      <p className="text-stone-600 text-sm font-medium italic tracking-[0.1em]">{item.title}</p>
+                      <p className="text-stone-500 text-xs italic">{item.subtitle}</p>
+                    </div>
+                  ))
+                ) : (
+                  <p className="text-stone-400 text-xs italic py-2">Ingen information tillgänglig än.</p>
+                )}
               </div>
             </div>
           </div>
