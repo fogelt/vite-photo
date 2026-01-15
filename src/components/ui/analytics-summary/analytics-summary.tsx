@@ -1,12 +1,19 @@
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/services";
-import { Users, MousePointer2, BarChart3 } from "lucide-react";
+import { useAuth } from "@clerk/clerk-react";
+import { createClerkSupabaseClient } from "@/services";
+import { Users, MousePointer2, Activity } from "lucide-react";
 
 export function AnalyticsSummary() {
-  const { data: stats, isLoading } = useQuery({
+  const { getToken } = useAuth();
+
+  const { data: stats, isLoading, error } = useQuery({
     queryKey: ["site_analytics"],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const token = await getToken({ template: "supabase" });
+      if (!token) throw new Error("Obehörig");
+
+      const adminClient = createClerkSupabaseClient(token);
+      const { data, error } = await adminClient
         .from("site_visits")
         .select("*")
         .order("visited_at", { ascending: false });
@@ -15,62 +22,47 @@ export function AnalyticsSummary() {
 
       const totalVisits = data?.length || 0;
       const uniqueUsers = new Set(data?.map((v) => v.visitor_hash)).size;
+      const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+      const recentVisits = data?.filter(v => new Date(v.visited_at) > oneDayAgo).length || 0;
 
-      // Calculate most popular pages
-      const pageCounts = data?.reduce((acc: Record<string, number>, curr) => {
-        acc[curr.page_path] = (acc[curr.page_path] || 0) + 1;
-        return acc;
-      }, {});
-
-      const popularPages = Object.entries(pageCounts || {})
-        .map(([path, count]) => ({ path, count }))
-        .sort((a, b) => b.count - a.count)
-        .slice(0, 3);
-
-      return { totalVisits, uniqueUsers, popularPages };
+      return { totalVisits, uniqueUsers, recentVisits };
     },
-    refetchInterval: 60000, // Refresh every minute
+    refetchInterval: 60000,
   });
 
-  if (isLoading) return <div className="h-32 w-full bg-stone-50 animate-pulse mb-12" />;
+  if (isLoading) return <div className="h-4 w-32 bg-stone-50 animate-pulse rounded" />;
+  if (error) return null; // Hide completely on error to save space
 
   return (
-    <div className="mb-16 space-y-8 animate-in fade-in slide-in-from-top-4 duration-1000">
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {/* Total Visits */}
-        <div className="bg-white border border-stone-100 p-6 shadow-sm">
-          <div className="flex justify-between items-start mb-4">
-            <p className="text-[10px] uppercase tracking-widest text-stone-400 font-bold">Totala Besök</p>
-            <MousePointer2 size={14} className="text-stone-300" />
-          </div>
-          <p className="text-2xl font-light text-stone-900">{stats?.totalVisits}</p>
-        </div>
+    <div className="flex items-center gap-6 animate-in fade-in slide-in-from-right-4 duration-1000">
 
-        {/* Unique Visitors */}
-        <div className="bg-white border border-stone-100 p-6 shadow-sm">
-          <div className="flex justify-between items-start mb-4">
-            <p className="text-[10px] uppercase tracking-widest text-stone-400 font-bold">Unika Besökare</p>
-            <Users size={14} className="text-stone-300" />
-          </div>
-          <p className="text-2xl font-light text-stone-900">{stats?.uniqueUsers}</p>
-        </div>
-
-        {/* Top Pages List */}
-        <div className="bg-white border border-stone-100 p-6 shadow-sm">
-          <div className="flex justify-between items-start mb-4">
-            <p className="text-[10px] uppercase tracking-widest text-stone-400 font-bold">Populära Sidor</p>
-            <BarChart3 size={14} className="text-stone-300" />
-          </div>
-          <div className="space-y-2">
-            {stats?.popularPages.map((page) => (
-              <div key={page.path} className="flex justify-between text-[10px] uppercase tracking-tighter">
-                <span className="text-stone-500 truncate max-w-[120px]">{page.path === '/' ? '/hem' : page.path}</span>
-                <span className="text-stone-900 font-bold">{page.count} besök</span>
-              </div>
-            ))}
-          </div>
+      {/* Total */}
+      <div className="flex items-center gap-2">
+        <MousePointer2 size={15} className="text-stone-400" />
+        <div className="flex flex-col">
+          <span className="text-[14px] font-medium leading-none text-stone-900">{stats?.totalVisits ?? 0}</span>
+          <span className="text-[8px] uppercase tracking-tighter text-stone-400">Besökare</span>
         </div>
       </div>
+
+      {/* Unique */}
+      <div className="flex items-center gap-2">
+        <Users size={15} className="text-stone-400" />
+        <div className="flex flex-col">
+          <span className="text-[14px] font-medium leading-none text-stone-900">{stats?.uniqueUsers ?? 0}</span>
+          <span className="text-[8px] uppercase tracking-tighter text-stone-400">Unika</span>
+        </div>
+      </div>
+
+      {/* 24h */}
+      <div className="flex items-center gap-2">
+        <Activity size={15} className="text-stone-400" />
+        <div className="flex flex-col">
+          <span className="text-[14px] font-medium leading-none text-stone-900">{stats?.recentVisits ?? 0}</span>
+          <span className="text-[8px] uppercase tracking-tighter text-stone-400">24h</span>
+        </div>
+      </div>
+
     </div>
   );
 }
