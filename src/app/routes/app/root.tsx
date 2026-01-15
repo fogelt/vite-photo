@@ -1,10 +1,14 @@
-import { Outlet } from 'react-router-dom';
+import { Outlet, useLocation } from 'react-router-dom';
 import { Header, Footer } from '@/components/ui';
 import { ScrollToTop } from '@/utils';
+import { AnalyticsTracker } from '@/components/analytics';
 
 export default function AppRoot() {
+  const location = useLocation();
+  const isAdminPage = location.pathname.startsWith('/admin');
   return (
     <div className="min-h-screen flex flex-col selection:bg-stone-100">
+      {!isAdminPage && <AnalyticsTracker />}
       <ScrollToTop />
       <Header />
       <main className="flex-grow min-h-[90vh]">

@@ -1,6 +1,7 @@
 import { QueryClient, useQueryClient } from '@tanstack/react-query';
 import { useMemo } from 'react';
 import { createBrowserRouter, RouterProvider } from 'react-router-dom';
+import { AnalyticsTracker } from '@/components/analytics';
 
 import { paths } from '@/config/paths';
 import { AdminGuard } from '@/components/auth';
