@@ -1,4 +1,4 @@
-import { Instagram, Linkedin, Mail, MapPin, Camera } from 'lucide-react';
+import { Instagram, Linkedin, Mail, MapPin, Camera, Phone } from 'lucide-react';
 import { AdminButton } from '@/components/ui';
 
 
@@ -37,6 +37,14 @@ export function Footer() {
             aria-label="Skicka ett e-postmeddelande till Myelie"
           >
             <Mail size={16} strokeWidth={1.2} aria-hidden="true" />
+          </a>
+
+          <a
+            href="tel:+46721682019"
+            className="hover:text-black transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-black rounded-sm outline-none"
+            aria-label="Telefonnummer till Myelie"
+          >
+            <Phone size={16} strokeWidth={1.2} aria-hidden="true" />
           </a>
         </div>
 
