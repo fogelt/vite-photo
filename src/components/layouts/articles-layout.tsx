@@ -34,27 +34,26 @@ export function ArticlesLayout() {
   if (!articles || articles.length === 0) return null;
 
   return (
-    <section className="max-w-7xl mx-auto px-6 py-16 md:py-24">
+    <section className="max-w-7xl mx-auto px-6 py-16 md:py-24 animate-in fade-in duration-1000">
       {/* Header */}
-      <div className="text-center mb-20 animate-in fade-in slide-in-from-bottom-4 duration-1000">
+      <div className="text-center mb-20">
         <h2 className="text-[11px] uppercase tracking-[0.4em] text-stone-400 mb-2">
           Publicerade reportage
         </h2>
       </div>
 
       {/* Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-20">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-20 animate-in fade-in slide-in-from-bottom-4 duration-1000">
         {articles.map((article, index) => (
           <a
             key={article.id}
             href={article.link_url}
             target="_blank"
             rel="noopener noreferrer"
-            className="group block space-y-6"
-            style={{ animationDelay: `${index * 200}ms` }}
+            className="group block space-y-6 p-5 shadow-lg"
           >
             {/* Bildbehållare */}
-            <div className="relative aspect-[16/9] overflow-hidden bg-stone-50 animate-in fade-in slide-in-from-bottom-6 duration-1000 fill-mode-both">
+            <div className="relative aspect-[16/9] overflow-hidden bg-stone-50 fill-mode-both">
               <img
                 src={article.image_url}
                 alt={article.title}

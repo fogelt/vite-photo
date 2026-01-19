@@ -9,7 +9,6 @@ interface AboutLayoutProps {
   isLoading?: boolean;
 }
 
-// Grouped data for the tabs
 const CATEGORIES = ["Utbildningar", "Utställningar", "Meriter"];
 
 export function AboutLayout({ image, isLoading: isImageLoading }: AboutLayoutProps) {
@@ -35,15 +34,17 @@ export function AboutLayout({ image, isLoading: isImageLoading }: AboutLayoutPro
     }
   });
 
-  const isLoading = isImageLoading || isTextLoading;
+  // Consolidated loading state for the data
+  const isDataFetching = isTextLoading || isCredsLoading;
   const activeItems = credentials?.filter(item => item.category === activeTab) || [];
 
   return (
     <section className="max-w-6xl mx-auto px-6 py-16 md:py-24">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-12 md:gap-24 items-start">
 
+        {/* Image Column */}
         <div className="order-2 md:order-1">
-          {isLoading ? (
+          {isImageLoading ? (
             <div className="aspect-[3/4] w-full bg-stone-50 animate-pulse" />
           ) : (
             <div className={`transition-opacity duration-1000 ${imageLoaded ? 'opacity-100' : 'opacity-0'}`}>
@@ -58,14 +59,19 @@ export function AboutLayout({ image, isLoading: isImageLoading }: AboutLayoutPro
           )}
         </div>
 
-        {/* Text-sida */}
-        <div className="order-1 md:order-2 space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-1000 fill-mode-both">
+        {/* Text Column */}
+        <div className={`order-1 md:order-2 space-y-8 ${isDataFetching
+          ? "opacity-0"
+          : "animate-in fade-in slide-in-from-bottom-4 duration-1000 fill-mode-both"
+          }`}>
 
           {/* Header & Bio */}
           <div className="space-y-3 pt-10">
             <div className="space-y-2">
               <h2 className="text-[11px] uppercase tracking-[0.4em] text-stone-400 font-bold">Om mig</h2>
-              <span className="font-normal text-xl text-stone-900 block">{content?.name || "Myelie Lendelund"}</span>
+              <span className="font-normal text-xl text-stone-900 block">
+                {content?.name || "Myelie Lendelund"}
+              </span>
             </div>
             <div className="space-y-6 text-stone-600 font-light leading-relaxed text-sm md:text-base">
               <p>{content?.bio_p1}</p>
@@ -109,7 +115,6 @@ export function AboutLayout({ image, isLoading: isImageLoading }: AboutLayoutPro
               ))}
             </div>
 
-            {/* Tab Content */}
             <div className="min-h-[100px]">
               <div
                 key={activeTab}
