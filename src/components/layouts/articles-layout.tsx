@@ -22,10 +22,27 @@ export function ArticlesLayout() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("articles")
-        .select("*")
-        .order("published_date", { ascending: false });
+        .select("*");
+
       if (error) throw error;
-      return data as DbArticle[];
+
+      // Sorteringslogik för svenska månadssträngar
+      const swedishMonths: { [key: string]: number } = {
+        januari: 0, februari: 1, mars: 2, april: 3, maj: 4, juni: 5,
+        juli: 6, augusti: 7, september: 8, oktober: 9, november: 10, december: 11
+      };
+
+      const sortedData = (data as DbArticle[]).sort((a, b) => {
+        const [monthA, yearA] = a.published_date.toLowerCase().split(" ");
+        const [monthB, yearB] = b.published_date.toLowerCase().split(" ");
+
+        if (yearA !== yearB) {
+          return parseInt(yearB) - parseInt(yearA);
+        }
+        return swedishMonths[monthB] - swedishMonths[monthA];
+      });
+
+      return sortedData;
     },
   });
 
@@ -98,10 +115,23 @@ export function ArticlesLayout() {
                 {/* Spacer to push button to the bottom */}
                 <div className="flex-grow" />
 
-                <div className="pt-2">
+                <div className="pt-2 flex flex-row items-center gap-1 group">
                   <span className="text-[10px] uppercase tracking-[0.2em] text-stone-900 border-b border-stone-200 pb-1 group-hover:border-stone-900 transition-colors">
-                    {isInternal ? "Till inlägget" : "Till artikeln"}
+                    {isInternal ? (
+                      "Se hela Inlägget"
+                    ) : (
+                      <>
+                        Läs mer på <span className="font-bold text-stone-600">{article.publisher}</span>
+                      </>
+                    )}
                   </span>
+                  {!isInternal && (
+                    <ExternalLink
+                      size={14}
+                      strokeWidth={1.5}
+                      className="text-stone-900 mb-1 -translate-y-[3px]"
+                    />
+                  )}
                 </div>
               </div>
             </Wrapper>

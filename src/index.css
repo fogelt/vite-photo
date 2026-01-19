@@ -20,3 +20,26 @@
     height: 0 !important;
   }
 }
+
+@layer utilities {
+  .force-scrollbar-show {
+    /* Firefox */
+    scrollbar-width: thin !important;
+    scrollbar-color: #78716c #f5f4f1 !important; 
+  }
+
+  /* Chrome, Safari, Edge - tvinga fram display: block */
+  .force-scrollbar-show::-webkit-scrollbar {
+    display: block !important;
+    height: 3px !important; /* Väldigt tunn och elegant */
+  }
+
+  .force-scrollbar-show::-webkit-scrollbar-track {
+    background: #f5f4f1 !important; /* stone-100 */
+  }
+
+  .force-scrollbar-show::-webkit-scrollbar-thumb {
+    background: #78716c !important; /* stone-500 */
+    border-radius: 0px; /* Kantig look för tidningskänsla */
+  }
+}

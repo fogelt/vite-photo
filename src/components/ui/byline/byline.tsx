@@ -9,10 +9,10 @@ export function Byline({ date, publisher }: { date: string; publisher: string })
       />
 
       <div className="flex flex-col items-start text-left border-l border-stone-200 pl-6">
-        <span className="text-[9px] uppercase tracking-[0.3em] text-stone-400 font-bold mb-1">
-          Skrivet av
+        <span className="text-[9px] uppercase tracking-[0.3em] text-stone-400 font-bold">
+          Redigerat av
         </span>
-        <h4 className="text-xl font-light tracking-wide text-stone-900 leading-tight">
+        <h4 className="text-xl font-light tracking-[0.15em] text-stone-900 leading-tight">
           Myelie Lendelund
         </h4>
         <p className="text-[10px] uppercase tracking-[0.15em] text-stone-400 font-medium mt-1">
