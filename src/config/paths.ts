@@ -4,5 +4,9 @@ export const paths = {
   portraits: { path: '/portraits' },
   weddings: { path: '/weddings' },
   articles: { path: '/articles' },
-  admin: { patk: '/admin' }
+  reportage: {
+    path: '/reportage/:slug',
+    getHref: (slug: string) => `/reportage/${slug}`
+  },
+  admin: { path: '/admin' }
 } as const;

@@ -1,7 +1,6 @@
 import { QueryClient, useQueryClient } from '@tanstack/react-query';
 import { useMemo } from 'react';
 import { createBrowserRouter, RouterProvider } from 'react-router-dom';
-import { AnalyticsTracker } from '@/components/analytics';
 
 import { paths } from '@/config/paths';
 import { AdminGuard } from '@/components/auth';
@@ -39,6 +38,7 @@ export const createAppRouter = (queryClient: QueryClient) =>
         { path: paths.weddings.path, lazy: () => import('./routes/app/weddings').then(convert(queryClient)) },
         { path: paths.about.path, lazy: () => import('./routes/app/about').then(convert(queryClient)) },
         { path: paths.articles.path, lazy: () => import('./routes/app/articles').then(convert(queryClient)) },
+        { path: paths.reportage.path, lazy: () => import('./routes/app/reportage').then(convert(queryClient)) },
         {
           path: 'admin',
           element: <AdminGuard />,
