@@ -39,8 +39,8 @@ export function ReportageLayout({ article }: ReportageLayoutProps) {
             publisher={article.publisher}
           />
 
-          <div className="mx-auto py-10 border-y">
-            <p className="text-xl md:text-2xl text-stone-700 font-light serif  whitespace-pre-line">
+          <div className="mx-auto pt-10 border-t">
+            <p className="text-xl md:text-[24px] text-stone-700 font-light serif whitespace-pre-line">
               {article.description}
             </p>
           </div>
