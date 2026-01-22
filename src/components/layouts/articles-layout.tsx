@@ -140,7 +140,7 @@ export function ArticlesLayout() {
                 {/* Variant-style Icon Logic (Photography Style) */}
                 <div className="absolute top-4 right-4 z-20 flex items-center gap-2 pointer-events-auto group/icon">
                   <span className="text-white text-[10px] uppercase tracking-widest bg-black/40 backdrop-blur-md px-2 py-1.5 rounded-md opacity-0 -translate-x-2 transition-all duration-300 group-hover/icon:opacity-100 group-hover/icon:translate-x-0 whitespace-nowrap">
-                    {isInternal ? "Läs inlägg" : "Öppna extern länk"}
+                    {isInternal ? "Läs reportage" : "Öppna extern länk"}
                   </span>
 
                   <div className="text-white drop-shadow-md bg-black/40 backdrop-blur-md px-2 py-2 rounded-md opacity-40 transition-all duration-300 group-hover/icon:scale-110 group-hover/icon:opacity-100">
@@ -177,7 +177,7 @@ export function ArticlesLayout() {
                 <div className="pt-2 flex flex-row items-center gap-1 group">
                   <span className="text-[10px] uppercase tracking-[0.2em] text-stone-900 border-b border-stone-200 pb-1 group-hover:border-stone-900 transition-colors">
                     {isInternal ? (
-                      "Se hela Inlägget"
+                      "Se hela Reportaget"
                     ) : (
                       <>
                         Läs mer på <span className="font-bold text-stone-600">{article.publisher}</span>
