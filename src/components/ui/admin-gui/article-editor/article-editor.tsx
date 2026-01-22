@@ -4,13 +4,13 @@ import { supabase, createClerkSupabaseClient } from "@/services";
 import { useAuth } from "@clerk/clerk-react";
 import { Modal } from "@/components/ui";
 import { uploadArticleImage } from "../photo-editor/api/photo-actions";
-import { Trash2, Plus, Type, Image as ImageIcon, X } from "lucide-react";
+import { Image as ImageIcon, X } from "lucide-react";
 
 type ArticleType = 'external' | 'internal';
 
 interface ContentBlock {
   id: string;
-  type: 'text' | 'image';
+  type: 'image';
   value: string;
 }
 
@@ -29,7 +29,7 @@ export function ArticleAdmin({ onClose }: { onClose: () => void }) {
     published_date: "",
     type: 'external' as ArticleType,
     slug: "",
-    content_blocks: [] as ContentBlock[], // Dynamic images/text
+    content_blocks: [] as ContentBlock[],
   });
 
   const [modalConfig, setModalConfig] = useState<{
@@ -63,7 +63,6 @@ export function ArticleAdmin({ onClose }: { onClose: () => void }) {
       const result = await uploadArticleImage(token, file);
 
       if (targetBlockId) {
-        // Adding image to the dynamic blocks
         setFormData(prev => ({
           ...prev,
           content_blocks: prev.content_blocks.map(b =>
@@ -71,7 +70,6 @@ export function ArticleAdmin({ onClose }: { onClose: () => void }) {
           )
         }));
       } else {
-        // Adding main hero image
         setFormData(prev => ({ ...prev, image_url: result.url }));
       }
     } catch (err: any) {
@@ -81,10 +79,10 @@ export function ArticleAdmin({ onClose }: { onClose: () => void }) {
     }
   };
 
-  const addBlock = (type: 'text' | 'image') => {
+  const addImageBlock = () => {
     const newBlock: ContentBlock = {
       id: Math.random().toString(36).substr(2, 9),
-      type,
+      type: 'image',
       value: ""
     };
     setFormData(prev => ({
@@ -113,7 +111,6 @@ export function ArticleAdmin({ onClose }: { onClose: () => void }) {
         ...formData,
         link_url: formData.type === 'external' ? formData.link_url : null,
         slug: formData.type === 'internal' ? (formData.slug || formData.title.toLowerCase().replace(/\s+/g, '-')) : null,
-        // Make sure it's valid JSON
         content_blocks: formData.type === 'internal' ? formData.content_blocks : [],
       };
 
@@ -170,7 +167,6 @@ export function ArticleAdmin({ onClose }: { onClose: () => void }) {
             <h3 className="text-[11px] uppercase tracking-[0.2em] text-stone-900 font-bold border-l-2 border-stone-900 pl-4">Skapa Innehåll</h3>
 
             <form onSubmit={handleSubmit} className="space-y-8">
-              {/* Type Toggle */}
               <div className="flex gap-4 p-1 bg-stone-100 rounded-sm">
                 {(['external', 'internal'] as ArticleType[]).map((t) => (
                   <button
@@ -188,7 +184,6 @@ export function ArticleAdmin({ onClose }: { onClose: () => void }) {
               <div className="space-y-6">
                 <InputField label="Huvudtitel" value={formData.title} onChange={(v) => setFormData({ ...formData, title: v })} />
 
-                {/* Image Upload (Hero) */}
                 <div className="space-y-3">
                   <label className="text-[10px] uppercase tracking-widest text-stone-500 font-bold">Omslagsbild</label>
                   <label className="block border-2 border-dashed border-stone-300 p-8 text-center cursor-pointer hover:border-stone-900 transition-colors bg-stone-50">
@@ -221,50 +216,40 @@ export function ArticleAdmin({ onClose }: { onClose: () => void }) {
                 {formData.type === 'external' ? (
                   <InputField label="Länk till artikel" value={formData.link_url} placeholder="https://..." onChange={(v) => setFormData({ ...formData, link_url: v })} />
                 ) : (
-                  <div className="space-y-8 pt-8 border-t border-stone-100">
+                  <div className="space-y-6 pt-8 border-t border-stone-100">
                     <div className="flex items-center justify-between">
-                      <h4 className="text-[11px] uppercase tracking-[0.2em] text-stone-900 font-bold">Reportage-block</h4>
-                      <div className="flex gap-2">
-                        <button type="button" onClick={() => addBlock('text')} className="p-2 hover:bg-stone-100 rounded-md transition-colors text-stone-600"><Type size={18} /></button>
-                        <button type="button" onClick={() => addBlock('image')} className="p-2 hover:bg-stone-100 rounded-md transition-colors text-stone-600"><ImageIcon size={18} /></button>
-                      </div>
+                      <h4 className="text-[11px] uppercase tracking-[0.2em] text-stone-900 font-bold">Innehållsbilder</h4>
+                      <button
+                        type="button"
+                        onClick={addImageBlock}
+                        className="flex items-center gap-2 px-3 py-1.5 bg-stone-100 hover:bg-stone-200 rounded-sm transition-colors text-stone-900 text-[9px] uppercase tracking-widest font-bold"
+                      >
+                        <ImageIcon size={14} /> Lägg till bild
+                      </button>
                     </div>
 
-                    <div className="space-y-6">
+                    <div className="grid grid-cols-3 gap-4">
                       {formData.content_blocks.map((block) => (
-                        <div key={block.id} className="relative bg-stone-50 p-6 border border-stone-200 rounded-sm group">
+                        <div key={block.id} className="relative aspect-square bg-stone-50 border border-stone-200 rounded-sm group overflow-hidden">
                           <button
                             type="button"
                             onClick={() => removeBlock(block.id)}
-                            className="absolute -top-3 -right-3 bg-stone-900 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                            className="absolute top-2 right-2 z-10 bg-stone-900/80 text-white p-1 rounded-sm opacity-0 group-hover:opacity-100 transition-opacity"
                           >
-                            <X size={12} />
+                            <X size={10} />
                           </button>
 
-                          {block.type === 'text' ? (
-                            <textarea
-                              placeholder="Skriv reportagetext..."
-                              className="w-full bg-transparent border-none outline-none text-sm font-light h-32 resize-none"
-                              value={block.value}
-                              onChange={(e) => {
-                                const newBlocks = formData.content_blocks.map(b =>
-                                  b.id === block.id ? { ...b, value: e.target.value } : b
-                                );
-                                setFormData({ ...formData, content_blocks: newBlocks });
-                              }}
-                            />
-                          ) : (
-                            <div className="space-y-4">
-                              {block.value ? (
-                                <img src={block.value} className="w-full h-40 object-cover" alt="" />
-                              ) : (
-                                <label className="flex flex-col items-center justify-center h-40 border border-dashed border-stone-300 cursor-pointer">
-                                  <input type="file" className="hidden" onChange={(e) => handleFileSelect(e, block.id)} />
-                                  <span className="text-[10px] uppercase font-bold text-stone-400">Ladda upp bild</span>
-                                </label>
-                              )}
-                            </div>
-                          )}
+                          <div className="h-full w-full">
+                            {block.value ? (
+                              <img src={block.value} className="w-full h-full object-cover" alt="" />
+                            ) : (
+                              <label className="flex flex-col items-center justify-center h-full w-full cursor-pointer hover:bg-stone-100 transition-colors">
+                                <input type="file" className="hidden" onChange={(e) => handleFileSelect(e, block.id)} />
+                                <ImageIcon size={16} className="text-stone-300 mb-2" />
+                                <span className="text-[8px] uppercase font-bold text-stone-400">Välj bild</span>
+                              </label>
+                            )}
+                          </div>
                         </div>
                       ))}
                     </div>
