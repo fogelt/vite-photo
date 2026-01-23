@@ -64,7 +64,7 @@ export function ImageContainer({
             <div
               key={photo.id}
               className={`
-        ${sizingClass} bg-stone-100 animate-pulseanimate-in fade-in duration-300`} />);
+        ${sizingClass} bg-stone-100 animate-pulseanimate-in fade-in duration-300 w-full`} />);
         }
         const hasLoaded = loadedImages[photo.id];
 
