@@ -55,8 +55,8 @@ export function ReportageLayout({ article }: ReportageLayoutProps) {
         </div>
       </header>
       <main className="px-4">
-        <div className="max-w-7xl mx-auto">
-          <div className="flex justify-between items-end mb-8 px-2 border-b border-stone-100 pb-4">
+        <div className="max-w-8xl mx-auto">
+          <div className="flex justify-between items-end mb-8  pb-4">
           </div>
           <ImageContainer
             photos={photos}

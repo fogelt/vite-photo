@@ -8,10 +8,9 @@ export default function PortfolioRoute() {
     queryFn: () => fetchPhotosByTag('portfolio'),
   });
 
-  if (isLoading) return;
   if (error) return;
 
   return (
-    <PortfolioLayout photos={photos} variant="default" />
+    <PortfolioLayout photos={photos} variant="default" isLoading={isLoading} />
   );
 }

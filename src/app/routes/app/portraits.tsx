@@ -8,10 +8,9 @@ export default function PortraitsRoute() {
     queryFn: () => fetchPhotosByTag('portraits'),
   });
 
-  if (isLoading) return;
   if (error) return;
 
   return (
-    <PortraitsLayout photos={photos} variant="default" />
+    <PortraitsLayout photos={photos} variant="default" isLoading={isLoading} />
   );
 }

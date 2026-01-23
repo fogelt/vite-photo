@@ -8,7 +8,7 @@ interface Photo {
   photo_variants?: { id: string; url: string; }[];
 }
 
-export function PortfolioLayout({ photos, variant = 'default' }: { photos: Photo[], variant?: 'default' | 'weddings' }) {
+export function PortfolioLayout({ photos, variant = 'default', isLoading }: { photos: Photo[], variant?: 'default' | 'weddings', isLoading?: boolean }) {
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
 
   return (
@@ -20,6 +20,7 @@ export function PortfolioLayout({ photos, variant = 'default' }: { photos: Photo
           const index = photos.findIndex(p => p.id === photo.id);
           setSelectedIndex(index);
         }}
+        isLoading={isLoading}
       />
 
       <ImageModal

@@ -8,10 +8,9 @@ export default function WeddingsRoute() {
     queryFn: () => fetchPhotosByTag('weddings'),
   });
 
-  if (isLoading) return;
   if (error) return;
 
   return (
-    <WeddingsLayout photos={photos} />
+    <WeddingsLayout photos={photos} isLoading={isLoading} />
   );
 }

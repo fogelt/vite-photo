@@ -20,7 +20,7 @@ interface WeddingPackage {
   highlight: boolean;
 }
 
-export function WeddingsLayout({ photos }: { photos: Photo[] }) {
+export function WeddingsLayout({ photos, isLoading }: { photos: Photo[], isLoading?: boolean }) {
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
 
   // Fetch dynamic packages from Supabase
@@ -50,6 +50,7 @@ export function WeddingsLayout({ photos }: { photos: Photo[] }) {
           const index = photos.findIndex(p => p.id === photo.id);
           setSelectedIndex(index);
         }}
+        isLoading={isLoading}
       />
 
       {/* Pricing Section */}
@@ -122,6 +123,7 @@ export function WeddingsLayout({ photos }: { photos: Photo[] }) {
           const index = photos.findIndex(p => p.id === photo.id);
           setSelectedIndex(index);
         }}
+        isLoading={isLoading}
       />
 
       <ImageModal

@@ -14,14 +14,19 @@ interface ImageContainerProps {
   variant?: 'default' | 'weddings' | 'reportage';
   onItemClick?: (photo: Photo) => void;
   renderItem?: (photo: Photo, index: number, className: string) => React.ReactNode;
+  isLoading?: boolean;
 }
 
 export function ImageContainer({
   photos,
   variant = 'default',
   onItemClick,
-  renderItem
+  renderItem,
+  isLoading
 }: ImageContainerProps) {
+  const displayPhotos = isLoading
+    ? Array.from({ length: 10 }).map((_, i) => ({ id: `skeleton-${i}`, url: '' })) as Photo[]
+    : photos;
   const [loadedImages, setLoadedImages] = useState<Record<string, boolean>>({});
 
   const handleImageLoad = (id: string) => {
@@ -30,7 +35,7 @@ export function ImageContainer({
 
   const getSizingClasses = (index: number) => {
     if (variant === 'reportage') {
-      return "w-full h-auto md:h-[35vh] md:w-auto flex-grow shrink-0 md:min-w-[15vh]";
+      return "w-full h-auto lg:h-[43.5vh] md:w-auto flex-grow lg:max-w-{40vw]";
     }
 
     const pos = (index % 10) + 1;
@@ -49,10 +54,18 @@ export function ImageContainer({
   };
 
   return (
-    <div className={`flex flex-wrap gap-2 p-2 w-[93%] mx-auto ${variant === 'reportage' ? 'justify-start' : 'justify-center'
+    <div className={`flex flex-wrap p-2 w-[93%] mx-auto ${variant === 'reportage' ? 'justify-start gap-1 ' : 'justify-center gap-2'
       }`}>
-      {photos.map((photo, index) => {
+      {displayPhotos.map((photo, index) => {
         const sizingClass = getSizingClasses(index);
+
+        if (isLoading) {
+          return (
+            <div
+              key={photo.id}
+              className={`
+        ${sizingClass} bg-stone-100 animate-pulseanimate-in fade-in duration-300`} />);
+        }
         const hasLoaded = loadedImages[photo.id];
 
         if (renderItem) return renderItem(photo, index, sizingClass);
