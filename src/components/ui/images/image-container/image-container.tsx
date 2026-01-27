@@ -35,7 +35,7 @@ export function ImageContainer({
 
   const getSizingClasses = (index: number) => {
     if (variant === 'reportage') {
-      return "w-full h-auto lg:h-[43.5vh] md:w-auto flex-grow lg:max-w-{40vw]";
+      return "lg:h-[360px] w-auto flex-grow";
     }
 
     const pos = (index % 10) + 1;
@@ -59,7 +59,7 @@ export function ImageContainer({
   };
 
   return (
-    <div className={`flex flex-wrap p-2 w-[93%] max-w-[2000px] mx-auto ${variant === 'reportage' ? 'justify-start gap-1 ' : 'justify-center gap-2'
+    <div className={`flex flex-wrap p-2 w-[93%] max-w-[2000px] mx-auto justify-center ${variant === 'reportage' ? 'gap-1 max-w-[1400px]' : ' gap-2'
       }`}>
       {displayPhotos.map((photo, index) => {
         const sizingClass = getSizingClasses(index);
@@ -97,11 +97,10 @@ export function ImageContainer({
               has_variant={photo.photo_variants?.length ? <Images size={15} /> : null}
             />
           </div>
+
         );
+
       })}
-      {variant === 'reportage' && (
-        <div className="flex-[10] h-0 min-w-[40%]" aria-hidden="true" />
-      )}
     </div>
   );
 }
