@@ -9,6 +9,12 @@ interface ReportageLayoutProps {
 export function ReportageLayout({ article }: ReportageLayoutProps) {
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
 
+  //-- Split text logic --
+  const paragraphs = (article.description || "").split('\n').filter((p: string) => p.trim() !== '');
+  const splitPoint = Math.max(1, Math.floor(paragraphs.length * 0.5));
+  const firstHalf = paragraphs.slice(0, splitPoint).join('\n\n');
+  const secondHalf = paragraphs.slice(splitPoint).join('\n\n');
+
   const photos = (article.content_blocks || [])
     .filter((block: any) => block.type === 'image')
     .map((block: any) => ({
@@ -46,11 +52,23 @@ export function ReportageLayout({ article }: ReportageLayoutProps) {
             date={article.published_date}
             publisher={article.publisher}
           />
-          <div className="py-10 border-y text-left">
-            <p className="text-xl md:text-[22px] leading-[1.5] md:leading-[1.6] text-stone-800 font-light serif whitespace-pre-line
-            first-letter:text-6xl">
-              {article.description}
-            </p>
+          <div className="py-3 border-y text-left">
+            <div className="max-w-5xl mx-auto flex flex-col md:flex-row gap-12">
+
+              <div className="flex-1">
+                <p className="text-sm leading-relaxed md:text-base text-stone-900 font-light whitespace-pre-line first-letter:text-4xl first-letter:mt-1">
+                  {firstHalf}
+                </p>
+              </div>
+
+              <div className="hidden md:block w-px bg-stone-200 self-stretch" />
+
+              <div className="flex-1 md:pt-16">
+                <p className="text-sm leading-relaxed md:text-base text-stone-900 font-light whitespace-pre-line">
+                  {secondHalf}
+                </p>
+              </div>
+            </div>
           </div>
         </div>
       </header>
