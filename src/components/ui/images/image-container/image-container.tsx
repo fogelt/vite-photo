@@ -43,18 +43,23 @@ export function ImageContainer({
 
     switch (pos) {
       case 1: case 2: case 3:
-        return base + (variant === 'weddings' ? (pos === 2 ? "md:h-[60vh] md:w-[35vw]" : "h-[60vh] md:w-[20vw]") : "h-[70vh] md:w-[25vw]");
+        return base + (variant === 'weddings'
+          ? (pos === 2 ? "h-[60vh] w-full md:w-[32%]" : "h-[60vh] w-full md:w-[20%]")
+          : "h-[70vh] w-full md:w-[28%]");
+
       case 4: case 5: case 7: case 9: case 10:
-        return base + "md:h-[60vh] md:w-[37vw]";
+        return base + "h-[60vh] w-full md:w-[45%]";
+
       case 6: case 8:
-        return base + "h-[60vh] md:w-[18vw]";
+        return base + "h-[60vh] w-full md:w-[18%]";
+
       default:
-        return base + "h-[25em] w-[35em]";
+        return base + "h-[25em] w-[30%]";
     }
   };
 
   return (
-    <div className={`flex flex-wrap p-2 w-[93%] mx-auto ${variant === 'reportage' ? 'justify-start gap-1 ' : 'justify-center gap-2'
+    <div className={`flex flex-wrap p-2 w-[93%] max-w-[1400px] mx-auto ${variant === 'reportage' ? 'justify-start gap-1 ' : 'justify-center gap-2'
       }`}>
       {displayPhotos.map((photo, index) => {
         const sizingClass = getSizingClasses(index);

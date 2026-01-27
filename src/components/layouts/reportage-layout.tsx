@@ -26,7 +26,7 @@ export function ReportageLayout({ article }: ReportageLayoutProps) {
 
   return (
 
-    <article className="min-h-screen bg-white pb-40 animate-in fade-in duration-1000">
+    <article className="min-h-screen bg-white pb-10 animate-in fade-in duration-1000">
       <footer className="mt-10 flex flex-row gap-3 ml-10">
         <CornerDownLeft size={15} className="text-stone-900" />
         <a
