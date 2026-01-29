@@ -43,7 +43,7 @@ export function ImageContainer({
 
     switch (pos) {
       case 1: case 2: case 3:
-        return base + (variant === 'weddings'
+        return base + " " + (variant === 'weddings'
           ? (pos === 2 ? "h-[60vh] w-full md:w-[32%]" : "h-[60vh] w-full md:w-[20%]")
           : "h-[70vh] w-full md:w-[28%]");
 
@@ -68,8 +68,9 @@ export function ImageContainer({
           return (
             <div
               key={photo.id}
-              className={`
-        ${sizingClass} bg-stone-100 animate-pulseanimate-in fade-in duration-300 w-full`} />);
+              className={`${sizingClass} bg-stone-200 animate-pulse fade-in min-h-[500px]`}
+            />
+          );
         }
         const hasLoaded = loadedImages[photo.id];
 

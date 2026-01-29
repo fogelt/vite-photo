@@ -2,6 +2,7 @@ import { useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/services";
 import { ReportageLayout } from "@/components/layouts/reportage-layout";
+import { useSEO } from '@/utils';
 
 export default function ReportageRoute() {
   const { slug } = useParams();
@@ -18,6 +19,14 @@ export default function ReportageRoute() {
       if (error) throw error;
       return data;
     },
+  });
+
+  // Set SEO with dynamic data from article
+  useSEO({
+    title: article?.title ? `${article.title} | Fotografering` : 'Fotoreportage | Myelie Foto',
+    description: article?.description || 'Fotoreportage från professionell fotograf',
+    keywords: 'fotoreportage, reportage, fotografi',
+    canonical: `https://myeliefoto.se/reportage/${slug}`
   });
 
   if (isLoading) return;
