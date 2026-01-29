@@ -187,3 +187,15 @@ export const updatePhotoDescription = async (token: string, photoId: string, des
 
   if (error) throw error;
 };
+
+export const updateVariantOrder = async (
+  token: string,
+  variants: Array<{ id: string; parent_id: string; position: number; url?: string }>
+) => {
+  const client = createClerkSupabaseClient(token);
+  const { error } = await client
+    .from("photo_variants")
+    .upsert(variants, { onConflict: 'id' });
+
+  if (error) throw error;
+};

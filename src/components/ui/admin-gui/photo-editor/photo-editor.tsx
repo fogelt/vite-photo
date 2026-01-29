@@ -30,17 +30,42 @@ import {
   deletePhoto,
   deletePhotoVariant,
   updatePhotoOrder,
+  updateVariantOrder,
   updatePhotoDescription
 } from "./api/photo-actions";
 
+// --- Variant Sortable Item ---
+function SortableVariant({ id, variant, onDelete }: { id: string; variant: any; onDelete: (id: string) => void }) {
+  const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id });
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={{ transform: CSS.Transform.toString(transform), transition }}
+      className="relative w-7 h-7 group/variant shrink-0"
+      {...attributes}
+      {...listeners}
+    >
+      <img src={variant.url} className="cursor-grab active:cursor-grabbing w-full h-full object-cover rounded-sm border border-stone-200 shadow-sm" />
+      <button
+        onClick={(e) => { e.stopPropagation(); onDelete(variant.id); }}
+        className="absolute -top-1 -right-1 w-3 h-3 bg-red-600 text-white opacity-0 group-hover/variant:opacity-100 flex items-center justify-center text-[7px] font-bold transition-opacity rounded-full shadow-sm z-30"
+      >
+        &times;
+      </button>
+    </div>
+  );
+}
+
 // --- SUB-COMPONENTS ---
-function SortablePhoto({ photo, index, onDelete, onAddVariant, onDeleteVariant, onUpdateDescription }: {
+function SortablePhoto({ photo, index, onDelete, onAddVariant, onDeleteVariant, onUpdateDescription, onReorderVariants }: {
   photo: any;
   index: number;
   onDelete: (id: string) => void;
   onAddVariant: (id: string) => void;
   onDeleteVariant: (variantId: string) => void;
   onUpdateDescription: (id: string, text: string) => void;
+  onReorderVariants: (photoId: string, oldIndex: number, newIndex: number) => void;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id: photo.id });
 
@@ -80,20 +105,28 @@ function SortablePhoto({ photo, index, onDelete, onAddVariant, onDeleteVariant, 
 
         {photo.photo_variants && photo.photo_variants.length > 0 && (
           <div className="absolute bottom-0 left-0 right-0 p-1 flex flex-wrap gap-1 bg-white/60 backdrop-blur-sm border-t border-stone-100/50 z-10">
-            {photo.photo_variants.map((variant: any) => (
-              <div key={variant.id} className="relative w-5 h-5 group/variant shrink-0">
-                <img src={variant.url} className="w-full h-full object-cover rounded-sm border border-stone-200 shadow-sm" />
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onDeleteVariant(variant.id);
-                  }}
-                  className="absolute -top-1 -right-1 w-3 h-3 bg-red-600 text-white opacity-0 group-hover/variant:opacity-100 flex items-center justify-center text-[7px] font-bold transition-opacity rounded-full shadow-sm z-30"
-                >
-                  &times;
-                </button>
-              </div>
-            ))}
+            <DndContext
+              sensors={useSensors(
+                useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+                useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
+              )}
+              collisionDetection={closestCenter}
+              onDragEnd={(event) => {
+                const { active, over } = event as DragEndEvent;
+                if (over && active.id !== over.id) {
+                  const variantKeys = (photo.photo_variants || []).map((v: any) => `${photo.id}::${v.id}`);
+                  const oldIndex = variantKeys.findIndex((k: string) => k === String(active.id));
+                  const newIndex = variantKeys.findIndex((k: string) => k === String(over.id));
+                  if (oldIndex > -1 && newIndex > -1) onReorderVariants(photo.id, oldIndex, newIndex);
+                }
+              }}
+            >
+              <SortableContext items={(photo.photo_variants || []).map((v: any) => `${photo.id}::${v.id}`)} strategy={rectSortingStrategy}>
+                {(photo.photo_variants || []).map((variant: any) => (
+                  <SortableVariant key={variant.id} id={`${photo.id}::${variant.id}`} variant={variant} onDelete={onDeleteVariant} />
+                ))}
+              </SortableContext>
+            </DndContext>
           </div>
         )}
       </div>
@@ -268,6 +301,10 @@ export function PhotoEditor({ tag }: { tag: string }) {
     });
   };
 
+  const handleReorderVariants = (photoId: string, oldIndex: number, newIndex: number) => {
+    setItems(prev => prev.map(p => p.id === photoId ? { ...p, photo_variants: arrayMove(p.photo_variants || [], oldIndex, newIndex) } : p));
+  };
+
   const handleDescriptionChange = (id: string, text: string) => {
     setItems(prev => prev.map(item => item.id === id ? { ...item, description: text } : item));
   };
@@ -284,6 +321,18 @@ export function PhotoEditor({ tag }: { tag: string }) {
         url: item.url
       }));
       await updatePhotoOrder(token, orderUpdates);
+
+      // Persist variant ordering as well
+      const variantUpdates = items.flatMap(item => (item.photo_variants || []).map((v: any, idx: number) => ({
+        id: v.id,
+        parent_id: item.id,
+        position: idx,
+        url: v.url
+      })));
+
+      if (variantUpdates.length > 0) {
+        await updateVariantOrder(token, variantUpdates);
+      }
 
       const descriptionPromises = items.map(item =>
         updatePhotoDescription(token, item.id, item.description || "")
@@ -351,6 +400,7 @@ export function PhotoEditor({ tag }: { tag: string }) {
                     onAddVariant={handleVariantUpload}
                     onDeleteVariant={handleDeleteVariant}
                     onUpdateDescription={handleDescriptionChange}
+                    onReorderVariants={handleReorderVariants}
                   />
                 ))}
               </div>
