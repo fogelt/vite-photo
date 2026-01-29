@@ -34,9 +34,12 @@ export function AnalyticsSummary() {
   if (error) return null; // Hide completely on error to save space
 
   return (
-    <div className="flex items-center gap-6 animate-in fade-in slide-in-from-right-4 duration-1000">
+    <div className="relative p-5 pt-10 border h-[85px] border-stone-200 shadow-lg flex items-center gap-6 animate-in fade-in slide-in-from-right-4 duration-1000">
 
       {/* Total */}
+      <p className="absolute top-2 text-[10px] text-stone-400 uppercase tracking-widest mt-2 font-bold">
+        Statistik
+      </p>
       <div className="flex items-center gap-2">
         <MousePointer2 size={15} className="text-stone-400" />
         <div className="flex flex-col">

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ArticleAdmin, PhotoEditor, AboutAdmin, WeddingAdmin, AnalyticsSummary } from "@/components/ui";
+import { ArticleAdmin, PhotoEditor, AboutAdmin, WeddingAdmin, AnalyticsSummary, UpdatesSummary } from "@/components/ui";
 
 function AdminCard({ title, description, onClick, isActive }: { title: string; description: string; onClick: () => void, isActive: boolean }) {
   return (
@@ -33,12 +33,12 @@ export function AdminLayout() {
   return (
     <div className="max-w-7xl mx-auto px-4 py-20 animate-in fade-in duration-700">
 
-      <div className="flex justify-between items-start mb-16">
+      <div className="flex justify-between items-start mb-16 mr-48">
         <div>
           <h1 className="text-2xl font-light uppercase tracking-[0.4em] text-stone-900">Kontrollpanel</h1>
           <p className="text-[10px] text-stone-400 uppercase tracking-widest mt-2 font-bold">Välkommen tillbaka, Myelie</p>
         </div>
-
+        <UpdatesSummary />
         <AnalyticsSummary />
       </div>
 
