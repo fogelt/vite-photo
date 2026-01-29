@@ -39,7 +39,7 @@ export function ImageContainer({
     }
 
     const pos = (index % 10) + 1;
-    const base = "flex-grow ";
+    const base = "flex-grow h-auto";
 
     switch (pos) {
       case 1: case 2: case 3:
@@ -59,7 +59,7 @@ export function ImageContainer({
   };
 
   return (
-    <div className={`flex flex-wrap p-2 w-[93%] max-w-[2000px] mx-auto justify-center ${variant === 'reportage' ? 'gap-1 max-w-[1400px]' : ' gap-2'
+    <div className={`flex flex-wrap p-2 w-[93%] max-w-[2000px] mx-auto justify-center ${variant === 'reportage' ? 'gap-1 max-w-[1350px]' : ' gap-2'
       }`}>
       {displayPhotos.map((photo, index) => {
         const sizingClass = getSizingClasses(index);
