@@ -18,7 +18,7 @@ interface DbArticle {
 }
 
 const filterOptions = [
-  { id: 'all', label: 'Översikt', icon: LayoutGrid },
+  { id: 'all', label: 'Alla', icon: LayoutGrid },
   { id: 'internal', label: 'Interna', icon: BookOpen },
   { id: 'external', label: 'Publicerade', icon: Newspaper },
 ] as const;
