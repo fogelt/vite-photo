@@ -59,7 +59,7 @@ export function ImageContainer({
   };
 
   return (
-    <div className={`flex flex-wrap p-2 w-[93%] max-w-[2000px] mx-auto justify-center ${variant === 'reportage' ? 'gap-1 max-w-[1000px]' : ' gap-2'
+    <div className={`flex flex-wrap p-2 w-[93%] mx-auto justify-center ${variant === 'reportage' ? ' gap-1 max-w-[1000px]' : ' gap-2 max-w-[2000px]'
       }`}>
       {displayPhotos.map((photo, index) => {
         const sizingClass = getSizingClasses(index);
