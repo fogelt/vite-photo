@@ -35,7 +35,7 @@ export function ImageContainer({
 
   const getSizingClasses = (index: number) => {
     if (variant === 'reportage') {
-      return "lg:h-[360px] w-auto flex-grow";
+      return "xl:h-[265px] w-auto flex-grow";
     }
 
     const pos = (index % 10) + 1;
@@ -44,7 +44,7 @@ export function ImageContainer({
     switch (pos) {
       case 1: case 2: case 3:
         return base + " " + (variant === 'weddings'
-          ? (pos === 2 ? "h-[60vh] w-full md:w-[32%]" : "h-[60vh] w-full md:w-[20%]")
+          ? (pos === 2 ? "h-[60vh] w-full md:w-[50%]" : "h-[60vh] w-full md:w-[20%]")
           : "h-[70vh] w-full md:w-[28%]");
 
       case 4: case 5: case 7: case 9: case 10:
@@ -59,7 +59,7 @@ export function ImageContainer({
   };
 
   return (
-    <div className={`flex flex-wrap p-2 w-[93%] max-w-[2000px] mx-auto justify-center ${variant === 'reportage' ? 'gap-1 max-w-[1350px]' : ' gap-2'
+    <div className={`flex flex-wrap p-2 w-[93%] max-w-[2000px] mx-auto justify-center ${variant === 'reportage' ? 'gap-1 max-w-[1000px]' : ' gap-2'
       }`}>
       {displayPhotos.map((photo, index) => {
         const sizingClass = getSizingClasses(index);
