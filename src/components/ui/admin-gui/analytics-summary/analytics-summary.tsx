@@ -13,19 +13,15 @@ export function AnalyticsSummary() {
       if (!token) throw new Error("Obehörig");
 
       const adminClient = createClerkSupabaseClient(token);
-      const { data, error } = await adminClient
-        .from("site_visits")
-        .select("*")
-        .order("visited_at", { ascending: false });
 
+      const { data, error } = await adminClient.rpc("get_analytics_summary");
       if (error) throw error;
 
-      const totalVisits = data?.length || 0;
-      const uniqueUsers = new Set(data?.map((v) => v.visitor_hash)).size;
-      const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
-      const recentVisits = data?.filter(v => new Date(v.visited_at) > oneDayAgo).length || 0;
-
-      return { totalVisits, uniqueUsers, recentVisits };
+      return {
+        totalVisits: data[0]?.total_visits || 0,
+        uniqueUsers: data[0]?.unique_users || 0,
+        recentVisits: data[0]?.recent_visits || 0
+      };
     },
     refetchInterval: 60000,
   });
@@ -34,7 +30,7 @@ export function AnalyticsSummary() {
   if (error) return null; // Hide completely on error to save space
 
   return (
-    <div className="relative p-5 pt-10 border h-[85px] border-stone-200 shadow-lg flex items-center gap-6 animate-in fade-in slide-in-from-right-4 duration-1000">
+    <div className="relative p-5 pt-10 border h-[85px] border-stone-200 shadow-lg hidden md:flex items-center gap-6 animate-in fade-in slide-in-from-right-4 duration-1000">
 
       {/* Total */}
       <p className="absolute top-2 text-[10px] text-stone-400 uppercase tracking-widest mt-2 font-bold">
