@@ -23,8 +23,11 @@ export function ImageCard({ url, alt, className, style, onClick, onLoad, has_var
             Bilden har varianter
           </span>
 
-          <div className="text-white drop-shadow-md bg-black/40 backdrop-blur-md px-1 opacity-65 py-1 rounded-md transition-transform duration-300 group-hover/icon:scale-110 group-hover/icon:opacity-100">
-            {has_variant}
+          <div className="cursor-pointer flex flex-row text-white text-xs font-medium drop-shadow-md bg-black/40 backdrop-blur-md px-1 opacity-65 py-1 rounded-md transition-transform duration-300 group-hover/icon:scale-110 group-hover/icon:opacity-100">
+            Fler bilder
+            <div className="ml-2">
+              {has_variant}
+            </div>
           </div>
         </div>
       )}
