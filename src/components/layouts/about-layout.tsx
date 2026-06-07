@@ -2,7 +2,7 @@ import { useState } from "react";
 import { ImageCard } from '@/components/ui';
 import { supabase } from "@/services";
 import { useQuery } from "@tanstack/react-query";
-import { Mail, Phone } from 'lucide-react'
+import { Globe, Mail, Phone } from 'lucide-react'
 
 interface AboutLayoutProps {
   image?: { url: string; alt: string };
@@ -83,6 +83,13 @@ export function AboutLayout({ image, isLoading: isImageLoading }: AboutLayoutPro
           <div className="pt-8 pb-8 border-t border-b border-stone-200 space-y-4">
             <h3 className="text-[11px] uppercase tracking-[0.4em] text-stone-400 font-bold">Kontakt</h3>
             <div className="space-y-2 text-stone-800 tracking-wide text-sm font-light">
+              <p className="flex items-center gap-3">
+                <Globe size={12} className="text-stone-400" />
+                <span className="text-stone-400">Hemsida:</span>
+                <a href={window.location.origin} className="hover:text-stone-400 transition-colors underline underline-offset-4 decoration-stone-200">
+                  {window.location.hostname}
+                </a>
+              </p>
               <p className="flex items-center gap-3">
                 <Mail size={12} className="text-stone-400" />
                 <span className="text-stone-400">E-mail:</span>
