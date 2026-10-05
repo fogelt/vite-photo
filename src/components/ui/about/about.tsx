@@ -39,20 +39,21 @@ export function AboutSection({ image, isLoading: isImageLoading }: AboutSectionP
   // Consolidated loading state for the data
   const isDataFetching = isTextLoading || isCredsLoading;
   const activeItems = credentials?.filter(item => item.category === activeTab) || [];
+  const portraitAlt = image?.alt || content?.name || "Myelie Lendelund";
 
   return (
-    <section className="max-w-6xl mx-auto px-6 py-16 md:py-24">
+    <section id="om-mig" className="max-w-6xl mx-auto px-6 py-16 md:py-24 scroll-mt-28 md:scroll-mt-20">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-12 md:gap-24 items-start">
 
-        {/* Image Column */}
-        <div className="order-2 md:order-1">
+        {/* Image Column (desktop only) */}
+        <div className="order-2 md:order-1 hidden md:block">
           {isImageLoading ? (
             <div className="aspect-[3/4] w-full bg-stone-50 animate-pulse" />
           ) : image?.url ? (
             <div className={`transition-opacity duration-1000 ${imageLoaded ? 'opacity-100' : 'opacity-0'}`}>
               <ImageCard
                 url={image.url}
-                alt={image.alt || content?.name || "Myelie Lendelund"}
+                alt={portraitAlt}
                 className={`aspect-[3/4] w-full object-cover ${imageLoaded ? 'animate-in fade-in slide-in-from-bottom-8 duration-1000 fill-mode-both delay-300' : ''
                   }`}
                 onLoad={() => setImageLoaded(true)}
@@ -69,11 +70,23 @@ export function AboutSection({ image, isLoading: isImageLoading }: AboutSectionP
 
           {/* Header & Bio */}
           <div className="space-y-3 pt-10">
-            <div className="space-y-2">
-              <h2 className="text-[11px] uppercase tracking-[0.4em] text-stone-400 font-bold">Om mig</h2>
-              <span className="font-normal text-xl text-stone-900 block">
-                {content?.name || "Myelie Lendelund"}
-              </span>
+            <div className="flex items-center gap-5">
+              {isImageLoading ? (
+                <div className="md:hidden w-20 h-24 rounded-sm bg-stone-100 animate-pulse shrink-0" />
+              ) : image?.url ? (
+                <img
+                  src={image.url}
+                  alt={portraitAlt}
+                  onLoad={() => setImageLoaded(true)}
+                  className={`md:hidden w-20 h-24 object-cover rounded-sm ring-1 ring-stone-200 shrink-0 transition-opacity duration-1000 ${imageLoaded ? 'opacity-100' : 'opacity-0'}`}
+                />
+              ) : null}
+              <div className="space-y-2">
+                <h2 className="text-[11px] uppercase tracking-[0.4em] text-stone-400 font-bold">Om mig</h2>
+                <span className="font-normal text-xl text-stone-900 block">
+                  {content?.name || "Myelie Lendelund"}
+                </span>
+              </div>
             </div>
             <div className="space-y-6 text-stone-600 font-light leading-relaxed text-sm md:text-base">
               <p>{content?.bio_p1}</p>
