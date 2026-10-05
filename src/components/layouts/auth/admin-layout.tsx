@@ -17,10 +17,25 @@ function AdminCard({ title, description, onClick, isActive }: { title: string; d
 }
 
 export function AdminLayout() {
+  type Site = 'portfolio' | 'wedding';
+  const [site, setSite] = useState<Site>('portfolio');
   const [activeTab, setActiveTab] = useState<string | null>(null);
   const [isArticleEditorOpen, setIsArticleEditorOpen] = useState(false);
   const [isAboutTextEditorOpen, setIsAboutTextEditorOpen] = useState(false);
   const [isWeddingEditorOpen, setIsWeddingEditorOpen] = useState(false); // New state
+
+  const GALLERY_TABS: Record<Site, string[]> = {
+    portfolio: ["portfolio", "weddings", "portraits", "about"],
+    wedding: ["weddings_main"],
+  };
+
+  const TAB_LABELS: Record<string, string> = {
+    portfolio: 'Portfölj',
+    weddings: 'Bröllop',
+    portraits: 'Porträtt',
+    about: 'Om mig',
+    weddings_main: 'Bröllopssajt',
+  };
 
   // Helper to close all full-screen editors
   const closeAllEditors = () => {
@@ -28,6 +43,11 @@ export function AdminLayout() {
     setIsAboutTextEditorOpen(false);
     setIsWeddingEditorOpen(false);
     setActiveTab(null);
+  };
+
+  const switchSite = (next: Site) => {
+    setSite(next);
+    closeAllEditors();
   };
 
   return (
@@ -43,19 +63,42 @@ export function AdminLayout() {
       </div>
 
 
+      {/* Site switcher: which site are we editing? */}
+      <div className="flex gap-2 mb-12">
+        {(
+          [
+            { id: 'portfolio', title: 'Portföljsajt', hint: 'myeliefoto.se' },
+            { id: 'wedding', title: 'Bröllopssajt', hint: 'bröllopssidan' },
+          ] as const
+        ).map((s) => (
+          <button
+            key={s.id}
+            onClick={() => switchSite(s.id)}
+            className={`flex-1 border px-6 py-4 text-left transition-all ${site === s.id
+              ? 'border-stone-900 bg-stone-900 text-white shadow-md'
+              : 'border-stone-100 bg-white text-stone-400 hover:border-stone-400 hover:text-stone-900'
+              }`}
+          >
+            <span className="block text-xs uppercase tracking-widest font-bold">{s.title}</span>
+            <span className={`block text-[10px] uppercase tracking-tighter mt-1 ${site === s.id ? 'text-stone-300' : 'text-stone-300'}`}>{s.hint}</span>
+          </button>
+        ))}
+      </div>
+
+
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-20">
         {/* Gallerier */}
         <AdminCard
           title="Bildgallerier"
-          description="Hantera foton i alla sektioner"
+          description={site === 'wedding' ? "Hantera bröllopssidans foton" : "Hantera foton i alla sektioner"}
           isActive={!!activeTab}
           onClick={() => {
             closeAllEditors();
-            setActiveTab('portfolio');
+            setActiveTab(GALLERY_TABS[site][0]);
           }}
         />
 
-        {/* New Wedding Pricing Card */}
+        {/* New Wedding Pricing Card (shared table, shown for both sites) */}
         <AdminCard
           title="Bröllopspaket"
           description="Ändra priser och innehåll i korten"
@@ -66,25 +109,29 @@ export function AdminLayout() {
           }}
         />
 
-        <AdminCard
-          title="Artiklar"
-          description="Hantera press & reportage"
-          isActive={isArticleEditorOpen}
-          onClick={() => {
-            closeAllEditors();
-            setIsArticleEditorOpen(true);
-          }}
-        />
+        {site === 'portfolio' && (
+          <AdminCard
+            title="Artiklar"
+            description="Hantera press & reportage"
+            isActive={isArticleEditorOpen}
+            onClick={() => {
+              closeAllEditors();
+              setIsArticleEditorOpen(true);
+            }}
+          />
+        )}
 
-        <AdminCard
-          title="Om Mig"
-          description="Redigera biografi och kontakt"
-          isActive={isAboutTextEditorOpen}
-          onClick={() => {
-            closeAllEditors();
-            setIsAboutTextEditorOpen(true);
-          }}
-        />
+        {site === 'portfolio' && (
+          <AdminCard
+            title="Om Mig"
+            description="Redigera biografi och kontakt"
+            isActive={isAboutTextEditorOpen}
+            onClick={() => {
+              closeAllEditors();
+              setIsAboutTextEditorOpen(true);
+            }}
+          />
+        )}
       </div>
 
       {/* Full-screen Overlay Editors */}
@@ -96,7 +143,7 @@ export function AdminLayout() {
       {activeTab && (
         <div className="animate-in slide-in-from-bottom-4 duration-700">
           <div className="flex gap-8 mb-8 border-b border-stone-100 pb-4">
-            {["portfolio", "weddings", "portraits", "about"].map(t => (
+            {GALLERY_TABS[site].map(t => (
               <button
                 key={t}
                 onClick={() => setActiveTab(t)}
@@ -105,7 +152,7 @@ export function AdminLayout() {
                   : 'text-stone-400 hover:text-stone-600'
                   }`}
               >
-                {t === 'portfolio' ? 'Portfölj' : t === 'weddings' ? 'Bröllop' : t === 'portraits' ? 'Porträtt' : 'Om mig'}
+                {TAB_LABELS[t] ?? t}
               </button>
             ))}
           </div>

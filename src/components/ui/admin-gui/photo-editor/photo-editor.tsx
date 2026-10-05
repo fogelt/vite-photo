@@ -167,7 +167,7 @@ function LayoutPreview({ tag, items }: { tag: string; items: any[] }) {
               {tag === 'portraits' && (
                 <PortraitsLayout photos={items} variant="default" />
               )}
-              {tag === 'weddings' && (
+              {(tag === 'weddings' || tag === 'weddings_main') && (
                 <WeddingsLayout photos={items} />
               )}
             </div>
