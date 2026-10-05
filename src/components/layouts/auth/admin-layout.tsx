@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ArticleAdmin, PhotoEditor, AboutAdmin, WeddingAdmin, AnalyticsSummary, UpdatesSummary } from "@/components/ui";
+import { ArticleAdmin, PhotoEditor, AboutAdmin, WeddingAdmin, WelcomeAdmin, EngagementAdmin, AnalyticsSummary, UpdatesSummary } from "@/components/ui";
 
 function AdminCard({ title, description, onClick, isActive }: { title: string; description: string; onClick: () => void, isActive: boolean }) {
   return (
@@ -23,6 +23,8 @@ export function AdminLayout() {
   const [isArticleEditorOpen, setIsArticleEditorOpen] = useState(false);
   const [isAboutTextEditorOpen, setIsAboutTextEditorOpen] = useState(false);
   const [isWeddingEditorOpen, setIsWeddingEditorOpen] = useState(false); // New state
+  const [isWelcomeEditorOpen, setIsWelcomeEditorOpen] = useState(false);
+  const [isEngagementEditorOpen, setIsEngagementEditorOpen] = useState(false);
 
   const GALLERY_TABS: Record<Site, string[]> = {
     portfolio: ["portfolio", "weddings", "portraits", "about"],
@@ -34,7 +36,7 @@ export function AdminLayout() {
     weddings: 'Bröllop',
     portraits: 'Porträtt',
     about: 'Om mig',
-    weddings_main: 'Bröllopssajt',
+    weddings_main: 'Bröllopsbilder',
   };
 
   // Helper to close all full-screen editors
@@ -42,6 +44,8 @@ export function AdminLayout() {
     setIsArticleEditorOpen(false);
     setIsAboutTextEditorOpen(false);
     setIsWeddingEditorOpen(false);
+    setIsWelcomeEditorOpen(false);
+    setIsEngagementEditorOpen(false);
     setActiveTab(null);
   };
 
@@ -109,6 +113,30 @@ export function AdminLayout() {
           }}
         />
 
+        {site === 'wedding' && (
+          <AdminCard
+            title="Välkomsttext"
+            description="Ändra rubrik och text på bröllopssajten"
+            isActive={isWelcomeEditorOpen}
+            onClick={() => {
+              closeAllEditors();
+              setIsWelcomeEditorOpen(true);
+            }}
+          />
+        )}
+
+        {site === 'wedding' && (
+          <AdminCard
+            title="Förlovning"
+            description="Ändra rubrik och text om förlovning"
+            isActive={isEngagementEditorOpen}
+            onClick={() => {
+              closeAllEditors();
+              setIsEngagementEditorOpen(true);
+            }}
+          />
+        )}
+
         {site === 'portfolio' && (
           <AdminCard
             title="Artiklar"
@@ -138,6 +166,8 @@ export function AdminLayout() {
       {isArticleEditorOpen && <ArticleAdmin onClose={() => setIsArticleEditorOpen(false)} />}
       {isAboutTextEditorOpen && <AboutAdmin onClose={() => setIsAboutTextEditorOpen(false)} />}
       {isWeddingEditorOpen && <WeddingAdmin onClose={() => setIsWeddingEditorOpen(false)} />}
+      {isWelcomeEditorOpen && <WelcomeAdmin onClose={() => setIsWelcomeEditorOpen(false)} />}
+      {isEngagementEditorOpen && <EngagementAdmin onClose={() => setIsEngagementEditorOpen(false)} />}
 
       {/* Inline Photo Editor */}
       {activeTab && (
