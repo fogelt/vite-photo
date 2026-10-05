@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { fetchPhotosByTag } from "@/services";
+import { fetchPhotosByTag, supabase } from "@/services";
 import { useAuth } from "@clerk/clerk-react";
 import {
   DndContext,
@@ -19,7 +19,7 @@ import {
   useSortable
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { Modal } from "@/components/ui";
+import { Modal, EngagementSection, WelcomeSection, AboutSection, ImageContainer } from "@/components/ui";
 import { AboutLayout } from "@/components/layouts/about-layout";
 import { PortfolioLayout } from "@/components/layouts/portfolio-layout";
 import { PortraitsLayout } from "@/components/layouts/portraits-layout";
@@ -170,11 +170,119 @@ function LayoutPreview({ tag, items }: { tag: string; items: any[] }) {
               {tag === 'weddings' && (
                 <WeddingsLayout photos={items} />
               )}
+              {tag === 'weddings_main' && (
+                <WeddingSitePreview items={items} />
+              )}
+              {tag === 'engagement' && (
+                <EngagementSection
+                  image={
+                    profileImage
+                      ? { url: profileImage.url, alt: profileImage.alt || "Förlovningsfotografering" }
+                      : undefined
+                  }
+                />
+              )}
             </div>
           </div>
         </div>
       </div>
     </div>
+  );
+}
+
+// --- Full wedding-site page preview (mirrors the wedding site's page order) ---
+function WeddingSitePreview({ items }: { items: any[] }) {
+  const mapImage = (photo: any) =>
+    photo ? { url: photo.url, alt: photo.alt || "Myelie Lendelund" } : undefined;
+
+  const { data: engagementPhotos = [] } = useQuery({
+    queryKey: ["photos", "engagement"],
+    queryFn: () => fetchPhotosByTag("engagement"),
+  });
+
+  const { data: aboutPhotos = [] } = useQuery({
+    queryKey: ["photos", "about"],
+    queryFn: () => fetchPhotosByTag("about"),
+  });
+
+  const { data: packages } = useQuery({
+    queryKey: ["wedding_packages"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("wedding_packages")
+        .select("*")
+        .order("sort_order", { ascending: true });
+      if (error) throw error;
+      return data;
+    }
+  });
+
+  return (
+    <section className="w-full flex flex-col gap-16 py-8 bg-white">
+      <ImageContainer photos={items.slice(0, 3)} variant="weddings" />
+
+      <WelcomeSection />
+
+      <ImageContainer photos={items.slice(3, 6)} variant="weddings" />
+
+      <AboutSection image={mapImage(aboutPhotos[0])} />
+
+      <div className="max-w-6xl mx-auto px-6 w-full">
+        <div className="text-center mb-12">
+          <h2 className="text-[11px] uppercase tracking-[0.4em] text-stone-400 mb-2">
+            Bröllopspaket
+          </h2>
+          <p className="text-stone-500 font-light italic text-sm">En investering för livet</p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          {packages?.map((pkg: any) => (
+            <div
+              key={pkg.id}
+              className={`
+                flex flex-col p-8 border border-stone-200
+                ${pkg.highlight
+                  ? 'bg-stone-50/50 shadow-sm ring-1 ring-stone-200 scale-[1.02] md:scale-105 z-10'
+                  : 'bg-white hover:shadow-md'
+                }
+              `}
+            >
+              <h3 className="font-light tracking-[0.2em] uppercase text-base mb-4 text-stone-800">
+                {pkg.name}
+              </h3>
+
+              <div className="flex-grow flex flex-col gap-4">
+                <div className="space-y-1">
+                  <p className="text-[11px] uppercase tracking-wider text-stone-400 font-semibold">Tid</p>
+                  <p className="text-xs text-stone-600 leading-relaxed">{pkg.time}</p>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-[11px] uppercase tracking-wider text-stone-400 font-semibold">Ingår</p>
+                  <p className="text-xs text-stone-600 leading-relaxed whitespace-pre-line">{pkg.includes}</p>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-[11px] uppercase tracking-wider text-stone-400 font-semibold">Leverans</p>
+                  <p className="text-xs text-stone-600 leading-relaxed">{pkg.images}</p>
+                </div>
+              </div>
+
+              <div className="mt-10 pt-6 border-t border-stone-300">
+                <p className="text-lg font-light tracking-tight text-stone-900">
+                  {pkg.price}
+                </p>
+                <p className="text-[10px] text-stone-400 uppercase tracking-tighter">
+                  inkl. moms
+                </p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <EngagementSection image={mapImage(engagementPhotos[0])} />
+
+      <ImageContainer photos={items.slice(6)} variant="weddings" />
+    </section>
   );
 }
 
