@@ -223,7 +223,7 @@ function WeddingSitePreview({ items }: { items: any[] }) {
 
       <WelcomeSection />
 
-      <ImageContainer photos={items.slice(3, 6)} variant="weddings" />
+      <ImageContainer photos={items.slice(3, 6)} variant="default" />
 
       <AboutSection image={mapImage(aboutPhotos[0])} />
 
@@ -281,7 +281,7 @@ function WeddingSitePreview({ items }: { items: any[] }) {
 
       <EngagementSection image={mapImage(engagementPhotos[0])} />
 
-      <ImageContainer photos={items.slice(6)} variant="weddings" />
+      <ImageContainer photos={items.slice(6)} variant="default" />
     </section>
   );
 }
