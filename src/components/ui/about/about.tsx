@@ -42,8 +42,8 @@ export function AboutSection({ image, isLoading: isImageLoading }: AboutSectionP
   const portraitAlt = image?.alt || content?.name || "Myelie Lendelund";
 
   return (
-    <section id="om-mig" className="max-w-6xl mx-auto px-6 py-16 md:py-24 scroll-mt-28 md:scroll-mt-20">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-12 md:gap-24 items-start">
+    <section id="om-mig" className="max-w-4xl mx-auto px-6 py-10 md:py-14 scroll-mt-28 md:scroll-mt-20">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12 items-start">
 
         {/* Image Column (desktop only) */}
         <div className="order-2 md:order-1 hidden md:block">
@@ -69,7 +69,7 @@ export function AboutSection({ image, isLoading: isImageLoading }: AboutSectionP
           }`}>
 
           {/* Header & Bio */}
-          <div className="space-y-3 pt-10">
+          <div className="space-y-3 pt-4">
             <div className="flex items-center gap-5">
               {isImageLoading ? (
                 <div className="md:hidden w-20 h-24 rounded-sm bg-stone-100 animate-pulse shrink-0" />
