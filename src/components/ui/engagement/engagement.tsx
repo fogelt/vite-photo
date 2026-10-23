@@ -10,7 +10,7 @@ interface EngagementSectionProps {
 
 const FALLBACK_TITLE = "Förlovning";
 const FALLBACK_TEXT =
-  "Innan den stora dagen kommer ögonblicket då allt börjar — förlovningen. En förlovningsfotografering är ett avslappnat sätt att lära känna varandra framför kameran, och ni får vackra bilder att spara och dela medan ni längtar efter bröllopet.";
+  "Grattis till förlovningen — vilken tid! En förlovningsfotografering är det perfekta genrepet inför bröllopet: ni får vänja er vid kameran (och mig!) i lugn och ro, utan tidsschema och gäster.\n\nPå köpet får ni avslappnade bilder att använda till inbjudningar, hemsidan eller väggen därhemma. Många par säger att det var då nervositeten inför bröllopsdagen släppte.";
 
 export function EngagementSection({ image, isLoading: isImageLoading }: EngagementSectionProps) {
   const [imageLoaded, setImageLoaded] = useState(false);
@@ -27,19 +27,19 @@ export function EngagementSection({ image, isLoading: isImageLoading }: Engageme
   if (isTextLoading) return null;
 
   return (
-    <section className="max-w-6xl mx-auto px-6 py-16 md:py-24">
+    <section id="forlovning" className="max-w-6xl mx-auto px-6 py-8 md:py-12 scroll-mt-28 md:scroll-mt-20">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-12 md:gap-24 items-start">
 
         {/* Text Column (left) */}
         <div className="order-1 space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-1000 fill-mode-both">
-          <div className="space-y-3 pt-10">
+          <div className="space-y-3 pt-4">
             <div className="space-y-2">
               <h2 className="text-[11px] uppercase tracking-[0.4em] text-stone-400 font-bold">Förlovning</h2>
               <span className="font-normal text-xl text-stone-900 block">
                 {content?.title || FALLBACK_TITLE}
               </span>
             </div>
-            <div className="text-stone-600 font-light leading-relaxed text-sm md:text-base whitespace-pre-line">
+            <div className="text-stone-600 font-light leading-relaxed text-sm md:text-base whitespace-pre-line first-letter:font-serif first-letter:text-5xl first-letter:float-left first-letter:mr-3 first-letter:leading-[0.9] first-letter:text-stone-700">
               {content?.text || FALLBACK_TEXT}
             </div>
           </div>
