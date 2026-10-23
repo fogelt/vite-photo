@@ -225,7 +225,7 @@ export function WeddingSitePreview({ items }: { items: any[] }) {
                       alt={engagementImage.alt || "Förlovningsfotografering"}
                       loading="lazy"
                       decoding="async"
-                      className="aspect-[4/5] w-full object-cover"
+                      className="h-auto w-full"
                     />
                   </div>
                 </div>

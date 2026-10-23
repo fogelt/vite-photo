@@ -48,13 +48,13 @@ export function EngagementSection({ image, isLoading: isImageLoading }: Engageme
         {/* Image Column (right) */}
         <div className="order-2">
           {isImageLoading ? (
-            <div className="aspect-[3/4] w-full bg-stone-50 animate-pulse" />
+            <div className="aspect-[210/297] w-full bg-stone-50 animate-pulse" />
           ) : image?.url ? (
             <div className={`transition-opacity duration-1000 ${imageLoaded ? 'opacity-100' : 'opacity-0'}`}>
               <ImageCard
                 url={image.url}
                 alt={image.alt || "Förlovningsfotografering"}
-                className={`aspect-[3/4] w-full object-cover ${imageLoaded ? 'animate-in fade-in slide-in-from-bottom-8 duration-1000 fill-mode-both delay-300' : ''
+                className={`h-auto w-full ${imageLoaded ? 'animate-in fade-in slide-in-from-bottom-8 duration-1000 fill-mode-both delay-300' : ''
                   }`}
                 onLoad={() => setImageLoaded(true)}
               />
