@@ -1,14 +1,24 @@
 import { useState } from "react";
-import { ArrowRight, HeartHandshake } from "lucide-react";
+import { ArrowRight, HeartHandshake, Info } from "lucide-react";
 import { ArticleAdmin, PhotoEditor, AboutAdmin, WeddingAdmin, WelcomeAdmin, EngagementAdmin, WeddingPlanner } from "@/components/ui";
 
-function AdminCard({ title, description, onClick, isActive }: { title: string; description: string; onClick: () => void, isActive: boolean }) {
+function AdminCard({ title, description, onClick, isActive, note }: { title: string; description: string; onClick: () => void, isActive: boolean, note?: string }) {
   return (
     <button
       onClick={onClick}
       className={`group border p-8 text-left transition-all bg-white shadow-sm hover:shadow-md ${isActive ? 'border-stone-900 ring-1 ring-stone-900' : 'border-stone-100 hover:border-stone-400'}`}
     >
-      <h3 className="text-xs uppercase tracking-widest mb-2 font-bold">{title}</h3>
+      <div className="mb-2 flex items-start justify-between gap-2">
+        <h3 className="text-xs uppercase tracking-widest font-bold">{title}</h3>
+        {note && (
+          <span className="group/note relative -mt-0.5 shrink-0" aria-label={note} role="img">
+            <Info size={13} className="text-stone-300 transition-colors group-hover/note:text-stone-600" />
+            <span className="pointer-events-none absolute right-0 top-5 z-20 w-56 border border-stone-800 bg-stone-900 px-3 py-2 text-[9px] font-light normal-case leading-relaxed tracking-wide text-stone-100 opacity-0 shadow-lg transition-opacity duration-150 group-hover/note:opacity-100">
+              {note}
+            </span>
+          </span>
+        )}
+      </div>
       <p className="text-[10px] text-stone-400 uppercase tracking-tighter">{description}</p>
       <div className={`mt-6 text-[9px] uppercase tracking-widest font-bold transition-colors ${isActive ? 'text-stone-900' : 'text-stone-300 group-hover:text-stone-900'}`}>
         {isActive ? "→ Visar nu" : "→ Hantera sektion"}
@@ -106,6 +116,12 @@ export function AdminLayout() {
       </div>
 
       {/* Site switcher: which site are we editing? */}
+      <div className="mb-6">
+        <h2 className="text-xs uppercase tracking-widest font-bold text-stone-900">Planering</h2>
+        <p className="text-[10px] text-stone-400 uppercase tracking-widest mt-1 font-bold">
+          Välj vilken sajt du redigerar
+        </p>
+      </div>
       <div className="flex gap-2 mb-12">
         {(
           [
@@ -144,6 +160,7 @@ export function AdminLayout() {
         <AdminCard
           title="Bröllopspaket"
           description="Ändra priser och innehåll i korten"
+          note="Samma paket visas på båda sajterna – ändringar slår igenom överallt."
           isActive={isWeddingEditorOpen}
           onClick={() => {
             closeAllEditors();
