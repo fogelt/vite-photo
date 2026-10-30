@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { ArrowRight, HeartHandshake } from "lucide-react";
-import { ArticleAdmin, PhotoEditor, AboutAdmin, WeddingAdmin, WelcomeAdmin, EngagementAdmin, AnalyticsSummary, UpdatesSummary, WeddingPlanner } from "@/components/ui";
+import { ArticleAdmin, PhotoEditor, AboutAdmin, WeddingAdmin, WelcomeAdmin, EngagementAdmin, WeddingPlanner } from "@/components/ui";
 
 function AdminCard({ title, description, onClick, isActive }: { title: string; description: string; onClick: () => void, isActive: boolean }) {
   return (
@@ -65,8 +65,6 @@ export function AdminLayout() {
           <h1 className="text-2xl font-light uppercase tracking-[0.4em] text-stone-900">Kontrollpanel</h1>
           <p className="text-[10px] text-stone-400 uppercase tracking-widest mt-2 font-bold">Välkommen tillbaka, Myelie</p>
         </div>
-        <UpdatesSummary />
-        <AnalyticsSummary />
       </div>
 
 
