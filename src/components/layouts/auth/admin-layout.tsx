@@ -68,6 +68,43 @@ export function AdminLayout() {
       </div>
 
 
+      {/* Wedding planning helper */}
+      <div className="mb-12">
+        <div className="mb-6">
+          <h2 className="text-xs uppercase tracking-widest font-bold text-stone-900">Verktyg</h2>
+          <p className="text-[10px] text-stone-400 uppercase tracking-widest mt-1 font-bold">
+            Planering som inte syns på sajten
+          </p>
+        </div>
+
+        <button
+          onClick={() => {
+            closeAllEditors();
+            setIsWeddingPlannerOpen(true);
+          }}
+          className="group w-full border border-stone-100 bg-white p-6 md:p-8 text-left shadow-sm transition-all hover:border-stone-400 hover:shadow-md"
+        >
+          <div className="flex flex-col md:flex-row md:items-center gap-6">
+            <div className="flex h-14 w-14 shrink-0 items-center justify-center bg-stone-900 text-white">
+              <HeartHandshake size={22} />
+            </div>
+            <div className="flex-1">
+              <h3 className="text-xs uppercase tracking-widest font-bold">Bröllopsplanering</h3>
+              <p className="text-[9px] text-stone-400 uppercase tracking-widest mt-1 font-bold">
+                Kunder, samtal, bilder och kalender
+              </p>
+              <p className="mt-3 max-w-2xl text-xs font-light leading-relaxed text-stone-500">
+                Skriv ner vad ni pratade om, spara ett foto på paret och se alla vigslar i en visuell kalender.
+              </p>
+            </div>
+            <div className="flex items-center gap-2 text-[9px] uppercase tracking-widest font-bold text-stone-900">
+              Öppna planering
+              <ArrowRight size={14} className="transition-transform group-hover:translate-x-1" />
+            </div>
+          </div>
+        </button>
+      </div>
+
       {/* Site switcher: which site are we editing? */}
       <div className="flex gap-2 mb-12">
         {(
@@ -161,43 +198,6 @@ export function AdminLayout() {
             }}
           />
         )}
-      </div>
-
-      {/* Wedding planning helper */}
-      <div className="border-t border-stone-100 pt-12">
-        <div className="mb-6">
-          <h2 className="text-xs uppercase tracking-widest font-bold text-stone-900">Verktyg</h2>
-          <p className="text-[10px] text-stone-400 uppercase tracking-widest mt-1 font-bold">
-            Planering som inte syns på sajten
-          </p>
-        </div>
-
-        <button
-          onClick={() => {
-            closeAllEditors();
-            setIsWeddingPlannerOpen(true);
-          }}
-          className="group w-full border border-stone-100 bg-white p-6 md:p-8 text-left shadow-sm transition-all hover:border-stone-400 hover:shadow-md"
-        >
-          <div className="flex flex-col md:flex-row md:items-center gap-6">
-            <div className="flex h-14 w-14 shrink-0 items-center justify-center bg-stone-900 text-white">
-              <HeartHandshake size={22} />
-            </div>
-            <div className="flex-1">
-              <h3 className="text-xs uppercase tracking-widest font-bold">Bröllopsplanering</h3>
-              <p className="text-[9px] text-stone-400 uppercase tracking-widest mt-1 font-bold">
-                Kunder, samtal, bilder och kalender
-              </p>
-              <p className="mt-3 max-w-2xl text-xs font-light leading-relaxed text-stone-500">
-                Skriv ner vad ni pratade om, spara ett foto på paret och se alla vigslar i en visuell kalender.
-              </p>
-            </div>
-            <div className="flex items-center gap-2 text-[9px] uppercase tracking-widest font-bold text-stone-900">
-              Öppna planering
-              <ArrowRight size={14} className="transition-transform group-hover:translate-x-1" />
-            </div>
-          </div>
-        </button>
       </div>
 
       {/* Full-screen Overlay Editors */}
