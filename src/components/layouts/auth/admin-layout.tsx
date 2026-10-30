@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { ArticleAdmin, PhotoEditor, AboutAdmin, WeddingAdmin, WelcomeAdmin, EngagementAdmin, AnalyticsSummary, UpdatesSummary } from "@/components/ui";
+import { ArrowRight, HeartHandshake } from "lucide-react";
+import { ArticleAdmin, PhotoEditor, AboutAdmin, WeddingAdmin, WelcomeAdmin, EngagementAdmin, AnalyticsSummary, UpdatesSummary, WeddingPlanner } from "@/components/ui";
 
 function AdminCard({ title, description, onClick, isActive }: { title: string; description: string; onClick: () => void, isActive: boolean }) {
   return (
@@ -25,6 +26,7 @@ export function AdminLayout() {
   const [isWeddingEditorOpen, setIsWeddingEditorOpen] = useState(false); // New state
   const [isWelcomeEditorOpen, setIsWelcomeEditorOpen] = useState(false);
   const [isEngagementEditorOpen, setIsEngagementEditorOpen] = useState(false);
+  const [isWeddingPlannerOpen, setIsWeddingPlannerOpen] = useState(false);
 
   const GALLERY_TABS: Record<Site, string[]> = {
     portfolio: ["portfolio", "weddings", "portraits", "about"],
@@ -46,6 +48,7 @@ export function AdminLayout() {
     setIsWeddingEditorOpen(false);
     setIsWelcomeEditorOpen(false);
     setIsEngagementEditorOpen(false);
+    setIsWeddingPlannerOpen(false);
     setActiveTab(null);
   };
 
@@ -162,12 +165,50 @@ export function AdminLayout() {
         )}
       </div>
 
+      {/* Wedding planning helper */}
+      <div className="border-t border-stone-100 pt-12">
+        <div className="mb-6">
+          <h2 className="text-xs uppercase tracking-widest font-bold text-stone-900">Verktyg</h2>
+          <p className="text-[10px] text-stone-400 uppercase tracking-widest mt-1 font-bold">
+            Planering som inte syns på sajten
+          </p>
+        </div>
+
+        <button
+          onClick={() => {
+            closeAllEditors();
+            setIsWeddingPlannerOpen(true);
+          }}
+          className="group w-full border border-stone-100 bg-white p-6 md:p-8 text-left shadow-sm transition-all hover:border-stone-400 hover:shadow-md"
+        >
+          <div className="flex flex-col md:flex-row md:items-center gap-6">
+            <div className="flex h-14 w-14 shrink-0 items-center justify-center bg-stone-900 text-white">
+              <HeartHandshake size={22} />
+            </div>
+            <div className="flex-1">
+              <h3 className="text-xs uppercase tracking-widest font-bold">Bröllopsplanering</h3>
+              <p className="text-[9px] text-stone-400 uppercase tracking-widest mt-1 font-bold">
+                Kunder, samtal, bilder och kalender
+              </p>
+              <p className="mt-3 max-w-2xl text-xs font-light leading-relaxed text-stone-500">
+                Skriv ner vad ni pratade om, spara ett foto på paret och se alla vigslar i en visuell kalender.
+              </p>
+            </div>
+            <div className="flex items-center gap-2 text-[9px] uppercase tracking-widest font-bold text-stone-900">
+              Öppna planering
+              <ArrowRight size={14} className="transition-transform group-hover:translate-x-1" />
+            </div>
+          </div>
+        </button>
+      </div>
+
       {/* Full-screen Overlay Editors */}
       {isArticleEditorOpen && <ArticleAdmin onClose={() => setIsArticleEditorOpen(false)} />}
       {isAboutTextEditorOpen && <AboutAdmin onClose={() => setIsAboutTextEditorOpen(false)} />}
       {isWeddingEditorOpen && <WeddingAdmin onClose={() => setIsWeddingEditorOpen(false)} />}
       {isWelcomeEditorOpen && <WelcomeAdmin onClose={() => setIsWelcomeEditorOpen(false)} />}
       {isEngagementEditorOpen && <EngagementAdmin onClose={() => setIsEngagementEditorOpen(false)} />}
+      {isWeddingPlannerOpen && <WeddingPlanner onClose={() => setIsWeddingPlannerOpen(false)} />}
 
       {/* Inline Photo Editor */}
       {activeTab && (
