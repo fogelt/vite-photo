@@ -74,7 +74,6 @@ function SortablePhoto({ photo, index, onDelete, onAddVariant, onDeleteVariant, 
     <div
       ref={setNodeRef}
       style={{ transform: CSS.Transform.toString(transform), transition }}
-      // Outer wrapper is flex-col, it will grow naturally but the image stays square
       className="relative flex flex-col bg-white border border-stone-100 rounded-sm shadow-sm overflow-hidden group"
     >
       {/* 1. Square Image Container */}
@@ -155,10 +154,8 @@ function LayoutPreview({ tag, items }: { tag: string; items: any[] }) {
 
       <div className="border border-stone-200 rounded-lg overflow-hidden bg-stone-100 relative flex-1 shadow-inner">
         <div className="absolute left-1/2 top-0 w-[222.2%] h-[222.2%] origin-top -translate-x-1/2 scale-[0.45] bg-white">
-
           <div className="w-full h-full overflow-y-auto overflow-x-hidden">
-            <div
-              className="pointer-events-none min-h-screen">
+            <div className="pointer-events-none min-h-screen">
               {tag === 'about' && (
                 <AboutLayout image={profileImage} isLoading={false} />
               )}
@@ -199,6 +196,7 @@ export function PhotoEditor({ tag }: { tag: string }) {
   const [items, setItems] = useState<any[]>([]);
   const [isSaving, setIsSaving] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
 
   const [modalConfig, setModalConfig] = useState<{
     isOpen: boolean; title: string; message: string; type?: 'info' | 'danger'; onConfirm?: () => void;
@@ -261,21 +259,50 @@ export function PhotoEditor({ tag }: { tag: string }) {
     });
   };
 
-  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
+  const processAndUploadFiles = async (fileList: FileList | File[]) => {
     setIsUploading(true);
     try {
       const token = await getAuthToken();
-      await uploadAndSavePhoto(token, file, tag);
+
+      for (const file of Array.from(fileList)) {
+        if (!file.type.startsWith("image/")) continue;
+        await uploadAndSavePhoto(token, file, tag);
+      }
+
       await queryClient.invalidateQueries({ queryKey: ["photos", tag] });
-      setModalConfig({ isOpen: true, title: "Klar!", message: "Bilden har laddats upp och sparats säkert." });
     } catch (err: any) {
-      setModalConfig({ isOpen: true, title: "Fel", message: err.message });
+      setModalConfig({ isOpen: true, title: "Fel vid uppladdning", message: err.message || "Kunde inte ladda upp bilderna." });
     } finally {
       setIsUploading(false);
-      e.target.value = "";
+    }
+  };
+
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files || e.target.files.length === 0) return;
+    await processAndUploadFiles(e.target.files);
+    e.target.value = "";
+  };
+
+  // Drag & Drop Handlers
+  const handleDragOver = (e: React.DragEvent<HTMLLabelElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!isDragging) setIsDragging(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent<HTMLLabelElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+  };
+
+  const handleDrop = async (e: React.DragEvent<HTMLLabelElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      await processAndUploadFiles(e.dataTransfer.files);
     }
   };
 
@@ -335,7 +362,6 @@ export function PhotoEditor({ tag }: { tag: string }) {
       }));
       await updatePhotoOrder(token, orderUpdates);
 
-      // Persist variant ordering as well
       const variantUpdates = items.flatMap(item => (item.photo_variants || []).map((v: any, idx: number) => ({
         id: v.id,
         parent_id: item.id,
@@ -371,16 +397,30 @@ export function PhotoEditor({ tag }: { tag: string }) {
 
       {/* --- HEADER ACTIONS --- */}
       <div className="flex flex-col md:flex-row justify-between items-end gap-6 mb-8 sticky top-0 z-40 bg-white/95 backdrop-blur-sm py-4 border-b border-stone-50">
-        <div className="flex items-center gap-6">
-          <label className="cursor-pointer group flex flex-col">
+        <div className="flex items-center gap-6 w-full md:w-auto">
+
+          {/* Drag & Drop Upload Zone */}
+          <label
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+            onDrop={handleDrop}
+            className={`cursor-pointer group flex flex-col border-2 border-dashed p-3 rounded-md transition-all w-full md:w-64 text-center ${isDragging
+              ? "border-stone-900 bg-stone-100"
+              : "border-stone-200 hover:border-stone-400 bg-stone-50/50"
+              }`}
+          >
             <input type="file" className="hidden" accept="image/*" onChange={handleFileSelect} disabled={isUploading} />
-            <span className="text-[10px] uppercase tracking-widest text-stone-400 mb-1">Ny Bild</span>
-            <span className={`text-sm font-bold border-b transition-all ${isUploading ? 'text-stone-300 border-stone-300' : 'text-stone-900 border-stone-900 hover:text-stone-600 hover:border-stone-600'}`}>
+            <span className="text-[9px] uppercase tracking-widest text-stone-400 mb-0.5">
+              {isDragging ? "Släpp bilden här" : "Ny Bild / Dra & Släpp"}
+            </span>
+            <span className={`text-xs font-bold transition-all ${isUploading ? 'text-stone-300' : 'text-stone-900 group-hover:text-stone-600'}`}>
               {isUploading ? "Laddar upp..." : `+ LADDA UPP`}
             </span>
           </label>
-          <div className="h-8 w-px bg-stone-200"></div>
-          <div className="flex flex-col">
+
+          <div className="hidden md:block h-8 w-px bg-stone-200"></div>
+
+          <div className="hidden md:flex flex-col">
             <span className="text-[10px] uppercase tracking-widest text-stone-400 mb-1">Antal</span>
             <span className="text-sm font-bold text-stone-900">{items.length} st</span>
           </div>
