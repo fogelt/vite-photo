@@ -73,7 +73,7 @@ export function AdminLayout() {
         {(
           [
             { id: 'portfolio', title: 'Portföljsajt', hint: 'myeliefoto.se' },
-            { id: 'wedding', title: 'Bröllopssajt', hint: 'bröllopssidan' },
+            { id: 'wedding', title: 'Bröllopssajt', hint: 'myeliebrollopsfoto.se' },
           ] as const
         ).map((s) => (
           <button
