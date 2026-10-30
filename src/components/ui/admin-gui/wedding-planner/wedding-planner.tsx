@@ -1,4 +1,4 @@
-import { useMemo, useState, type ChangeEvent, type FormEvent, type ReactNode } from "react";
+import { useMemo, useRef, useState, type ChangeEvent, type FormEvent, type ReactNode } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@clerk/clerk-react";
 import {
@@ -18,6 +18,8 @@ import {
   Trash2,
   Users,
   X,
+  Mic,
+  Square
 } from "lucide-react";
 import { createClerkSupabaseClient } from "@/services";
 import { Modal } from "@/components/ui";
@@ -464,15 +466,13 @@ export function WeddingPlanner({ onClose }: { onClose: () => void }) {
                         selectDay(date);
                       }
                     }}
-                    className={`relative min-h-[84px] cursor-pointer border-b border-r border-stone-100 p-1.5 transition-colors md:min-h-[104px] md:p-2 ${
-                      inMonth ? (isWeekend ? "bg-stone-50/40" : "bg-white") : "bg-stone-50/70 text-stone-300"
-                    } ${isSelected ? "ring-1 ring-inset ring-stone-900" : "hover:bg-stone-50"}`}
+                    className={`relative min-h-[84px] cursor-pointer border-b border-r border-stone-100 p-1.5 transition-colors md:min-h-[104px] md:p-2 ${inMonth ? (isWeekend ? "bg-stone-50/40" : "bg-white") : "bg-stone-50/70 text-stone-300"
+                      } ${isSelected ? "ring-1 ring-inset ring-stone-900" : "hover:bg-stone-50"}`}
                   >
                     <div className="flex items-center justify-between">
                       <span
-                        className={`flex h-5 w-5 items-center justify-center text-[10px] font-mono md:text-[11px] ${
-                          isToday ? "rounded-full bg-stone-900 font-bold text-white" : inMonth ? "text-stone-600" : "text-stone-300"
-                        }`}
+                        className={`flex h-5 w-5 items-center justify-center text-[10px] font-mono md:text-[11px] ${isToday ? "rounded-full bg-stone-900 font-bold text-white" : inMonth ? "text-stone-600" : "text-stone-300"
+                          }`}
                       >
                         {date.getDate()}
                       </span>
@@ -624,9 +624,8 @@ export function WeddingPlanner({ onClose }: { onClose: () => void }) {
                         className="flex w-full items-center gap-3 border border-stone-100 p-2.5 text-left transition-colors hover:border-stone-300"
                       >
                         <div
-                          className={`flex h-8 w-8 shrink-0 items-center justify-center ${
-                            overdue ? "bg-rose-50 text-rose-600" : "bg-amber-50 text-amber-600"
-                          }`}
+                          className={`flex h-8 w-8 shrink-0 items-center justify-center ${overdue ? "bg-rose-50 text-rose-600" : "bg-amber-50 text-amber-600"
+                            }`}
                         >
                           <BellRing size={13} />
                         </div>
@@ -893,11 +892,10 @@ function FilterPill({
     <button
       type="button"
       onClick={onClick}
-      className={`inline-flex items-center border px-3 py-1.5 text-[8px] font-bold uppercase tracking-widest transition-colors ${
-        active
-          ? "border-stone-900 bg-stone-900 text-white"
-          : "border-stone-200 bg-white text-stone-400 hover:border-stone-400 hover:text-stone-900"
-      }`}
+      className={`inline-flex items-center border px-3 py-1.5 text-[8px] font-bold uppercase tracking-widest transition-colors ${active
+        ? "border-stone-900 bg-stone-900 text-white"
+        : "border-stone-200 bg-white text-stone-400 hover:border-stone-400 hover:text-stone-900"
+        }`}
     >
       {children}
     </button>
@@ -926,6 +924,18 @@ function ClientEditor({
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [isRecording, setIsRecording] = useState(false);
+  const [isProcessingVoice, setIsProcessingVoice] = useState(false);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
+  const { getToken } = useAuth();
+
+
+  const getAuth = async () => {
+    const token = await getToken({ template: "supabase" });
+    if (!token) throw new Error("Verifiering misslyckades. Logga in igen.");
+    return { token, client: createClerkSupabaseClient(token) };
+  };
 
   const update = (patch: Partial<ClientDraft>) => setDraft((previous) => ({ ...previous, ...patch }));
 
@@ -986,6 +996,93 @@ function ClientEditor({
     }
   };
 
+  const startRecording = async () => {
+    audioChunksRef.current = [];
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const recorder = new MediaRecorder(stream, { mimeType: "audio/webm" });
+
+      recorder.ondataavailable = (event) => {
+        if (event.data.size > 0) audioChunksRef.current.push(event.data);
+      };
+
+      recorder.onstop = async () => {
+        try {
+          const audioBlob = new Blob(audioChunksRef.current, {
+            type: recorder.mimeType || "audio/webm",
+          });
+
+          if (audioBlob.size === 0) {
+            throw new Error("No audio was recorded.");
+          }
+
+          await handleVoiceUpload(audioBlob);
+        } catch (error) {
+          console.error("Recording processing failed:", error);
+          setError("Kunde inte bearbeta inspelningen.");
+        } finally {
+          stream.getTracks().forEach((track) => track.stop());
+          mediaRecorderRef.current = null;
+          audioChunksRef.current = [];
+        }
+      };
+
+      mediaRecorderRef.current = recorder;
+      recorder.start();
+      setIsRecording(true);
+    } catch (err) {
+      console.error("Kunde inte starta inspelning:", err);
+    }
+  };
+
+  const stopRecording = () => {
+    if (mediaRecorderRef.current) {
+      mediaRecorderRef.current.stop();
+      setIsRecording(false);
+    }
+  };
+
+  const handleVoiceUpload = async (blob: Blob) => {
+    setIsProcessingVoice(true);
+    try {
+      const { token } = await getAuth(); // Or your Clerk token getter
+      const formData = new FormData();
+      formData.append("audio", blob, "voice-note.webm");
+
+      const response = await fetch("https://ixftqfowcpxruaglasdv.supabase.co/functions/v1/parse-wedding-voice", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        body: formData,
+      });
+
+      if (!response.ok) throw new Error("Kunde inte bearbeta röstanteckning.");
+
+      const parsedData = await response.json();
+
+      // Update your draft form fields automatically!
+      setDraft((prev) => ({
+        ...prev,
+        couple_names: parsedData.couple_names || prev.couple_names,
+        contact_person: parsedData.contact_person || prev.contact_person,
+        email: parsedData.email || prev.email,
+        phone: parsedData.phone || prev.phone,
+        wedding_date: parsedData.wedding_date || prev.wedding_date,
+        wedding_time: parsedData.wedding_time || prev.wedding_time,
+        venue: parsedData.venue || prev.venue,
+        package: parsedData.package || prev.package,
+        notes: parsedData.notes || prev.notes,
+        status: parsedData.status || prev.status,
+        follow_up_date: parsedData.follow_up_date || prev.follow_up_date,
+      }));
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setIsProcessingVoice(false);
+    }
+  };
+
   return (
     <div className="fixed inset-0 z-[150] flex items-start justify-center overflow-y-auto bg-stone-900/40 p-3 backdrop-blur-sm md:p-8">
       <div className="w-full max-w-4xl animate-in fade-in slide-in-from-bottom-2 border border-stone-100 bg-white shadow-2xl duration-300">
@@ -1016,11 +1113,10 @@ function ClientEditor({
               <div>
                 <p className="mb-2 text-[9px] font-bold uppercase tracking-widest text-stone-400">Bild på paret</p>
                 <label
-                  className={`group relative block aspect-[4/5] w-full cursor-pointer overflow-hidden border-2 border-dashed transition-colors ${
-                    draft.couple_photo_url
-                      ? "border-transparent"
-                      : "border-stone-200 bg-stone-50 hover:border-stone-400"
-                  }`}
+                  className={`group relative block aspect-[4/5] w-full cursor-pointer overflow-hidden border-2 border-dashed transition-colors ${draft.couple_photo_url
+                    ? "border-transparent"
+                    : "border-stone-200 bg-stone-50 hover:border-stone-400"
+                    }`}
                 >
                   <input
                     type="file"
@@ -1072,17 +1168,40 @@ function ClientEditor({
                         key={status}
                         type="button"
                         onClick={() => update({ status })}
-                        className={`flex items-center gap-2 border px-2.5 py-2 text-left text-[8px] font-bold uppercase tracking-wide transition-all ${
-                          active
-                            ? `${meta.badge} ring-1 ring-stone-900/20`
-                            : "border-stone-100 text-stone-400 hover:border-stone-300"
-                        }`}
+                        className={`flex items-center gap-2 border px-2.5 py-2 text-left text-[8px] font-bold uppercase tracking-wide transition-all ${active
+                          ? `${meta.badge} ring-1 ring-stone-900/20`
+                          : "border-stone-100 text-stone-400 hover:border-stone-300"
+                          }`}
                       >
                         <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${meta.dot}`} />
                         {meta.label}
                       </button>
                     );
                   })}
+                </div>
+
+                <div className="flex items-center gap-2 rounded-lg border border-stone-200 bg-stone-50 p-3 mt-10">
+                  {isRecording ? (
+                    <button
+                      type="button"
+                      onClick={stopRecording}
+                      className="flex items-center gap-2 rounded bg-rose-600 px-4 py-2 text-xs font-bold text-white animate-pulse"
+                    >
+                      <Square size={14} /> Stoppa &fyll i formulär
+                    </button>
+                  ) : isProcessingVoice ? (
+                    <div className="flex items-center gap-2 text-xs text-stone-500">
+                      <Loader2 size={16} className="animate-spin" /> AI analyserar röstanteckning...
+                    </div>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={startRecording}
+                      className="flex items-center gap-2 rounded bg-stone-900 px-4 py-2 text-xs font-bold text-white hover:bg-stone-800"
+                    >
+                      <Mic size={14} /> Tala in kunddetaljer (Svenska)
+                    </button>
+                  )}
                 </div>
               </div>
             </div>
