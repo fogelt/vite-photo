@@ -2845,6 +2845,7 @@ __metadata:
     tailwindcss-animate: "npm:^1.0.7"
     vite: "npm:^7.2.7"
     vite-plugin-sitemap: "npm:^0.8.2"
+    wobnimo: "npm:^0.2.0"
   languageName: unknown
   linkType: soft
 
@@ -2918,6 +2919,20 @@ __metadata:
   bin:
     node-which: bin/which.js
   checksum: 10c0/fe9d6463fe44a76232bb6e3b3181922c87510a5b250a98f1e43a69c99c079b3f42ddeca7e03d3e5f2241bf2d334f5a7657cfa868b97c109f3870625842f4cc15
+  languageName: node
+  linkType: hard
+
+"wobnimo@npm:^0.2.0":
+  version: 0.2.0
+  resolution: "wobnimo@npm:0.2.0"
+  peerDependencies:
+    react: ">=18"
+  peerDependenciesMeta:
+    react:
+      optional: true
+  bin:
+    wobnimo: dist/cli.js
+  checksum: 10c0/3e69a18069685dadc7324b88a1478025e10d2a82d76b4a02f92988b366a16812b07f08127076d45749342405e23c7e7480b486cc6f3575272aa56ded36d3a640
   languageName: node
   linkType: hard
 

@@ -1,6 +1,7 @@
 import { useMemo, useRef, useState, type ChangeEvent, type FormEvent, type ReactNode } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@clerk/clerk-react";
+import { Mascot } from "wobnimo/react";
 import {
   BellRing,
   CalendarDays,
@@ -926,6 +927,7 @@ function ClientEditor({
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
   const [isProcessingVoice, setIsProcessingVoice] = useState(false);
+  const [voiceError, setVoiceError] = useState<string | null>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
   const { getToken } = useAuth();
@@ -997,6 +999,7 @@ function ClientEditor({
   };
 
   const startRecording = async () => {
+    setVoiceError(null);
     audioChunksRef.current = [];
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -1019,7 +1022,7 @@ function ClientEditor({
           await handleVoiceUpload(audioBlob);
         } catch (error) {
           console.error("Recording processing failed:", error);
-          setError("Kunde inte bearbeta inspelningen.");
+          setVoiceError("Kunde inte bearbeta inspelningen. Försök gärna igen!");
         } finally {
           stream.getTracks().forEach((track) => track.stop());
           mediaRecorderRef.current = null;
@@ -1032,6 +1035,9 @@ function ClientEditor({
       setIsRecording(true);
     } catch (err) {
       console.error("Kunde inte starta inspelning:", err);
+      setVoiceError(
+        "Kunde inte starta mikrofonen. Kontrollera att du har tillåtit mikrofonåtkomst."
+      );
     }
   };
 
@@ -1057,9 +1063,31 @@ function ClientEditor({
         body: formData,
       });
 
-      if (!response.ok) throw new Error("Kunde inte bearbeta röstanteckning.");
+      const responseText = await response.text();
+      let parsedData: any = {};
 
-      const parsedData = await response.json();
+      try {
+        parsedData = responseText ? JSON.parse(responseText) : {};
+      } catch {
+        throw new Error("Servern returnerade ett oväntat svar.");
+      }
+
+      if (!response.ok) {
+        console.error("Voice function error:", response.status, parsedData);
+        throw new Error(
+          typeof parsedData?.error === "string"
+            ? parsedData.error
+            : "Kunde inte bearbeta röstanteckningen."
+        );
+      }
+
+      if (parsedData?.success === false || parsedData?.error) {
+        throw new Error(
+          typeof parsedData.error === "string"
+            ? parsedData.error
+            : "Kunde inte tolka inspelningen."
+        );
+      }
 
       // Update your draft form fields automatically!
       setDraft((prev) => ({
@@ -1077,270 +1105,354 @@ function ClientEditor({
         follow_up_date: parsedData.follow_up_date || prev.follow_up_date,
       }));
     } catch (error) {
-      console.error(error);
+      console.error("Voice upload failed:", error);
+      setVoiceError("Miso kunde inte tolka inspelningen. Försök gärna igen!");
     } finally {
       setIsProcessingVoice(false);
     }
   };
 
   return (
-    <div className="fixed inset-0 z-[150] flex items-start justify-center overflow-y-auto bg-stone-900/40 p-3 backdrop-blur-sm md:p-8">
-      <div className="w-full max-w-4xl animate-in fade-in slide-in-from-bottom-2 border border-stone-100 bg-white shadow-2xl duration-300">
-        <div className="sticky top-0 z-10 flex items-center justify-between gap-4 border-b border-stone-100 bg-white px-5 py-4 md:px-8">
-          <div>
-            <h3 className="text-sm font-light uppercase tracking-[0.25em] text-stone-900">
-              {isNew ? "Ny kund" : "Redigera kund"}
-            </h3>
-            <p className="mt-1 text-[9px] font-bold uppercase tracking-widest text-stone-400">
-              {isNew ? "Lägg till i din bröllopskalender" : "Uppdatera anteckningar och detaljer"}
-            </p>
-          </div>
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label="Stäng"
-            className="flex h-8 w-8 items-center justify-center border border-stone-100 text-stone-400 transition-colors hover:border-stone-900 hover:text-stone-900"
-          >
-            <X size={15} />
-          </button>
-        </div>
-
-        <form onSubmit={handleSubmit} className="space-y-7 p-5 md:p-8">
-          {error && <div className="border border-rose-100 bg-rose-50 px-4 py-3 text-[11px] text-rose-700">{error}</div>}
-
-          <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
-            <div className="space-y-5">
-              <div>
-                <p className="mb-2 text-[9px] font-bold uppercase tracking-widest text-stone-400">Bild på paret</p>
-                <label
-                  className={`group relative block aspect-[4/5] w-full cursor-pointer overflow-hidden border-2 border-dashed transition-colors ${draft.couple_photo_url
-                    ? "border-transparent"
-                    : "border-stone-200 bg-stone-50 hover:border-stone-400"
-                    }`}
-                >
-                  <input
-                    type="file"
-                    accept="image/*"
-                    className="hidden"
-                    onChange={handleUpload}
-                    disabled={uploading}
-                  />
-                  {draft.couple_photo_url ? (
-                    <>
-                      <img src={draft.couple_photo_url} alt="Paret" className="h-full w-full object-cover" />
-                      <span className="absolute inset-0 flex items-center justify-center gap-2 bg-stone-900/55 text-[9px] font-bold uppercase tracking-widest text-white opacity-0 transition-opacity group-hover:opacity-100">
-                        {uploading ? <Loader2 size={16} className="animate-spin" /> : <ImagePlus size={16} />}
-                        {uploading ? "Laddar upp..." : "Byt bild"}
-                      </span>
-                    </>
-                  ) : (
-                    <span className="flex h-full flex-col items-center justify-center gap-3 px-4 text-center text-stone-400">
-                      {uploading ? <Loader2 size={22} className="animate-spin" /> : <Camera size={26} />}
-                      <span className="text-[9px] font-bold uppercase tracking-widest">
-                        {uploading ? "Laddar upp..." : "Ladda upp bild"}
-                      </span>
-                      <span className="text-[10px] font-light normal-case text-stone-400">
-                        Ett foto hjälper dig minnas paret
-                      </span>
-                    </span>
-                  )}
-                </label>
-
-                {draft.couple_photo_url && (
-                  <button
-                    type="button"
-                    onClick={() => update({ couple_photo_url: "", couple_photo_public_id: "" })}
-                    className="mt-2 text-[8px] font-bold uppercase tracking-widest text-stone-300 transition-colors hover:text-rose-600"
-                  >
-                    Ta bort bild
-                  </button>
-                )}
-              </div>
-
-              <div>
-                <p className="mb-2 text-[9px] font-bold uppercase tracking-widest text-stone-400">Status</p>
-                <div className="grid grid-cols-2 gap-2">
-                  {STATUSES.map((status) => {
-                    const meta = STATUS_META[status];
-                    const active = draft.status === status;
-                    return (
-                      <button
-                        key={status}
-                        type="button"
-                        onClick={() => update({ status })}
-                        className={`flex items-center gap-2 border px-2.5 py-2 text-left text-[8px] font-bold uppercase tracking-wide transition-all ${active
-                          ? `${meta.badge} ring-1 ring-stone-900/20`
-                          : "border-stone-100 text-stone-400 hover:border-stone-300"
-                          }`}
-                      >
-                        <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${meta.dot}`} />
-                        {meta.label}
-                      </button>
-                    );
-                  })}
-                </div>
-
-                <div className="flex items-center gap-2 rounded-lg border border-stone-200 bg-stone-50 p-3 mt-10">
-                  {isRecording ? (
-                    <button
-                      type="button"
-                      onClick={stopRecording}
-                      className="flex items-center gap-2 rounded bg-rose-600 px-4 py-2 text-xs font-bold text-white animate-pulse"
-                    >
-                      <Square size={14} /> Stoppa &fyll i formulär
-                    </button>
-                  ) : isProcessingVoice ? (
-                    <div className="flex items-center gap-2 text-xs text-stone-500">
-                      <Loader2 size={16} className="animate-spin" /> AI analyserar röstanteckning...
-                    </div>
-                  ) : (
-                    <button
-                      type="button"
-                      onClick={startRecording}
-                      className="flex items-center gap-2 rounded bg-stone-900 px-4 py-2 text-xs font-bold text-white hover:bg-stone-800"
-                    >
-                      <Mic size={14} /> Tala in kunddetaljer (Svenska)
-                    </button>
-                  )}
-                </div>
-              </div>
+    <div className="fixed inset-0 z-[150] bg-stone-900/40 backdrop-blur-sm">
+      <div className="absolute inset-0 overflow-hidden p-3 md:p-8">
+        <div className="mx-auto flex h-full w-full max-w-5xl min-w-0 flex-col overflow-hidden border border-stone-100 bg-white shadow-2xl">
+          <div className="z-10 flex shrink-0 items-center gap-4 border-b border-stone-100 bg-white px-5 py-4 md:px-8">
+            <div>
+              <h3 className="text-sm font-light uppercase tracking-[0.25em] text-stone-900">
+                {isNew ? "Ny kund" : "Redigera kund"}
+              </h3>
+              <p className="mt-1 text-[9px] font-bold uppercase tracking-widest text-stone-400">
+                {isNew ? "Lägg till i din bröllopskalender" : "Uppdatera anteckningar och detaljer"}
+              </p>
             </div>
-
-            <div className="space-y-7 lg:col-span-2">
-              <div className="space-y-4">
-                <p className="border-l-2 border-stone-900 pl-3 text-[10px] font-bold uppercase tracking-[0.2em] text-stone-900">
-                  Paret
-                </p>
-                <div className="space-y-1.5">
-                  <label className="block text-[9px] font-bold uppercase tracking-widest text-stone-400">
-                    Parets namn *
-                  </label>
-                  <input
-                    autoFocus
-                    required
-                    value={draft.couple_names}
-                    onChange={(event) => update({ couple_names: event.target.value })}
-                    placeholder="t.ex. Anna & Erik"
-                    className="w-full border-b-2 border-stone-200 bg-transparent pb-2 text-xl font-light text-stone-900 outline-none transition-colors focus:border-stone-900"
-                  />
-                </div>
-                <TextField
-                  label="Kontaktperson"
-                  value={draft.contact_person}
-                  onChange={(value) => update({ contact_person: value })}
-                  placeholder="Vem pratade du med?"
-                />
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                  <TextField
-                    label="E-post"
-                    type="email"
-                    value={draft.email}
-                    onChange={(value) => update({ email: value })}
-                    placeholder="namn@exempel.se"
-                  />
-                  <TextField
-                    label="Telefon"
-                    type="tel"
-                    value={draft.phone}
-                    onChange={(value) => update({ phone: value })}
-                    placeholder="070-123 45 67"
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-4 border-t border-stone-100 pt-6">
-                <p className="border-l-2 border-stone-900 pl-3 text-[10px] font-bold uppercase tracking-[0.2em] text-stone-900">
-                  Bröllopet
-                </p>
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                  <TextField
-                    label="Bröllopsdatum"
-                    type="date"
-                    value={draft.wedding_date}
-                    onChange={(value) => update({ wedding_date: value })}
-                  />
-                  <TextField
-                    label="Tid"
-                    type="time"
-                    value={draft.wedding_time}
-                    onChange={(value) => update({ wedding_time: value })}
-                  />
-                </div>
-                <TextField
-                  label="Plats / lokal"
-                  value={draft.venue}
-                  onChange={(value) => update({ venue: value })}
-                  placeholder="t.ex. Högbo Bruk"
-                />
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                  <TextField
-                    label="Paket"
-                    value={draft.package}
-                    onChange={(value) => update({ package: value })}
-                    placeholder="t.ex. Hela dagen"
-                  />
-                  <TextField
-                    label="Följ upp datum"
-                    type="date"
-                    value={draft.follow_up_date}
-                    onChange={(value) => update({ follow_up_date: value })}
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-3 border-t border-stone-100 pt-6">
-                <p className="border-l-2 border-stone-900 pl-3 text-[10px] font-bold uppercase tracking-[0.2em] text-stone-900">
-                  Anteckningar
-                </p>
-                <textarea
-                  rows={5}
-                  value={draft.notes}
-                  onChange={(event) => update({ notes: event.target.value })}
-                  placeholder="Vad pratade ni om? Önskemål, budget, stämning, platser att föreslå..."
-                  className="w-full resize-y border border-stone-200 p-3 text-sm font-light leading-relaxed outline-none transition-colors focus:border-stone-900"
-                />
-              </div>
-            </div>
-          </div>
-
-          <div className="flex flex-col-reverse gap-3 border-t border-stone-100 pt-5 sm:flex-row sm:items-center">
-            {!isNew && clientId && (
-              <button
-                type="button"
-                onClick={() => setConfirmDelete(true)}
-                className="inline-flex items-center justify-center gap-2 px-3 py-2 text-[8px] font-bold uppercase tracking-widest text-stone-300 transition-colors hover:text-rose-600"
-              >
-                <Trash2 size={11} />
-                Ta bort kund
-              </button>
-            )}
-            <div className="flex-1" />
             <button
               type="button"
               onClick={onClose}
-              className="border border-stone-200 px-5 py-3 text-[9px] font-bold uppercase tracking-widest text-stone-400 transition-colors hover:border-stone-900 hover:text-stone-900"
+              aria-label="Stäng"
+              className="ml-auto flex h-10 w-10 shrink-0 items-center justify-center border border-stone-200 bg-white text-stone-500 transition-colors hover:border-stone-900 hover:text-stone-900"
             >
-              Avbryt
-            </button>
-            <button
-              type="submit"
-              disabled={saving || uploading}
-              className="bg-stone-900 px-6 py-3 text-[9px] font-bold uppercase tracking-[0.2em] text-white shadow-md transition-colors hover:bg-stone-700 disabled:opacity-40"
-            >
-              {saving ? "Sparar..." : isNew ? "Spara kund" : "Spara ändringar"}
+              <X size={17} />
             </button>
           </div>
-        </form>
+
+          <form onSubmit={handleSubmit} className="min-h-0 flex-1 space-y-7 overflow-y-auto p-5 md:p-8">
+            {error && <div className="border border-rose-100 bg-rose-50 px-4 py-3 text-[11px] text-rose-700">{error}</div>}
+
+            {/* Miso voice assistant - full width so the mascot and controls never get squeezed */}
+            <div className="mb-8 min-w-0 rounded-2xl border border-stone-200 bg-[#faf9f6] p-4 sm:p-5">
+              <div className="flex min-w-0 flex-col items-center gap-4 sm:flex-row sm:gap-6">
+                <div className="flex h-32 w-full shrink-0 items-center justify-center sm:w-32">
+                  <Mascot
+                    character="miso"
+                    state={isRecording ? "listening" : isProcessingVoice ? "thinking" : "idle"}
+                    style={{ width: 128, height: 128, maxWidth: "100%" }}
+                  />
+                </div>
+
+                <div className="min-w-0 flex-1 text-center sm:text-left">
+                  <p className="text-[9px] font-bold uppercase tracking-[0.2em] text-stone-400">
+                    Din lilla assistent
+                  </p>
+                  <h4 className="mt-1 font-serif text-lg font-medium text-stone-800">
+                    {isRecording ? "Miso lyssnar..." : isProcessingVoice ? "Miso tänker..." : "Prata med Miso"}
+                  </h4>
+                  <p className="mt-1 text-xs font-light leading-relaxed text-stone-500">
+                    {isRecording
+                      ? "Berätta om paret och deras stora dag. Miso lyssnar!"
+                      : isProcessingVoice
+                        ? "Jag sorterar informationen och fyller i formuläret åt dig."
+                        : "Berätta lite om dina kunder så hjälper Miso dig att fylla i uppgifterna."}
+                  </p>
+
+                  <div className="mt-4">
+                    {isRecording ? (
+                      <button
+                        type="button"
+                        onClick={stopRecording}
+                        className="inline-flex items-center gap-2 rounded-full bg-rose-600 px-5 py-2.5 text-xs font-medium text-white shadow-sm transition-all hover:bg-rose-700"
+                      >
+                        <Square size={12} />
+                        Stoppa inspelningen
+                      </button>
+                    ) : isProcessingVoice ? (
+                      <div className="inline-flex items-center gap-2 rounded-full border border-stone-200 bg-white px-5 py-2.5 text-xs text-stone-500">
+                        <Loader2 size={14} className="animate-spin" />
+                        Miso arbetar...
+                      </div>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={startRecording}
+                        className="inline-flex items-center gap-2 rounded-full bg-stone-800 px-5 py-2.5 text-xs font-medium text-white shadow-sm transition-all hover:bg-stone-700"
+                      >
+                        <Mic size={14} />
+                        Börja prata med Miso
+                      </button>
+                    )}
+                  </div>
+
+                  {voiceError && (
+                    <p
+                      role="alert"
+                      className="mt-3 text-[11px] font-medium text-rose-600"
+                    >
+                      {voiceError}
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              <div className="mt-3 border-t border-stone-200/70 px-1 pt-3">
+                <p className="text-center text-[10px] font-light text-stone-400 sm:text-left">
+                  Tips: Du kan prata helt naturligt på svenska. Miso plockar upp namn,
+                  datum, kontaktuppgifter och bröllopsdetaljer.
+                </p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
+              <div className="space-y-5">
+                <div>
+                  <p className="mb-2 text-[9px] font-bold uppercase tracking-widest text-stone-400">Bild på paret</p>
+                  <label
+                    className={`group relative block aspect-[4/5] w-full cursor-pointer overflow-hidden border-2 border-dashed transition-colors ${draft.couple_photo_url
+                      ? "border-transparent"
+                      : "border-stone-200 bg-stone-50 hover:border-stone-400"
+                      }`}
+                  >
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={handleUpload}
+                      disabled={uploading}
+                    />
+                    {draft.couple_photo_url ? (
+                      <>
+                        <img src={draft.couple_photo_url} alt="Paret" className="h-full w-full object-cover" />
+                        <span className="absolute inset-0 flex items-center justify-center gap-2 bg-stone-900/55 text-[9px] font-bold uppercase tracking-widest text-white opacity-0 transition-opacity group-hover:opacity-100">
+                          {uploading ? <Loader2 size={16} className="animate-spin" /> : <ImagePlus size={16} />}
+                          {uploading ? "Laddar upp..." : "Byt bild"}
+                        </span>
+                      </>
+                    ) : (
+                      <span className="flex h-full flex-col items-center justify-center gap-3 px-4 text-center text-stone-400">
+                        {uploading ? <Loader2 size={22} className="animate-spin" /> : <Camera size={26} />}
+                        <span className="text-[9px] font-bold uppercase tracking-widest">
+                          {uploading ? "Laddar upp..." : "Ladda upp bild"}
+                        </span>
+                        <span className="text-[10px] font-light normal-case text-stone-400">
+                          Ett foto hjälper dig minnas paret
+                        </span>
+                      </span>
+                    )}
+                  </label>
+
+                  {draft.couple_photo_url && (
+                    <button
+                      type="button"
+                      onClick={() => update({ couple_photo_url: "", couple_photo_public_id: "" })}
+                      className="mt-2 text-[8px] font-bold uppercase tracking-widest text-stone-300 transition-colors hover:text-rose-600"
+                    >
+                      Ta bort bild
+                    </button>
+                  )}
+                </div>
+
+                <div>
+                  <p className="mb-2 text-[9px] font-bold uppercase tracking-widest text-stone-400">Status</p>
+                  <div className="grid grid-cols-2 gap-2">
+                    {STATUSES.map((status) => {
+                      const meta = STATUS_META[status];
+                      const active = draft.status === status;
+                      return (
+                        <button
+                          key={status}
+                          type="button"
+                          onClick={() => update({ status })}
+                          className={`flex items-center gap-2 border px-2.5 py-2 text-left text-[8px] font-bold uppercase tracking-wide transition-all ${active
+                            ? `${meta.badge} ring-1 ring-stone-900/20`
+                            : "border-stone-100 text-stone-400 hover:border-stone-300"
+                            }`}
+                        >
+                          <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${meta.dot}`} />
+                          {meta.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                </div>
+              </div>
+
+              <div className="space-y-7 lg:col-span-2">
+                <div className="space-y-4">
+                  <p className="border-l-2 border-stone-900 pl-3 text-[10px] font-bold uppercase tracking-[0.2em] text-stone-900">
+                    Paret
+                  </p>
+                  <div className="space-y-1.5">
+                    <label className="block text-[9px] font-bold uppercase tracking-widest text-stone-400">
+                      Parets namn *
+                    </label>
+                    <input
+                      autoFocus
+                      required
+                      value={draft.couple_names}
+                      onChange={(event) => update({ couple_names: event.target.value })}
+                      placeholder="t.ex. Anna & Erik"
+                      className="w-full border-b-2 border-stone-200 bg-transparent pb-2 text-xl font-light text-stone-900 outline-none transition-colors focus:border-stone-900"
+                    />
+                  </div>
+                  <TextField
+                    label="Kontaktperson"
+                    value={draft.contact_person}
+                    onChange={(value) => update({ contact_person: value })}
+                    placeholder="Vem pratade du med?"
+                  />
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                    <TextField
+                      label="E-post"
+                      type="email"
+                      value={draft.email}
+                      onChange={(value) => update({ email: value })}
+                      placeholder="namn@exempel.se"
+                    />
+                    <TextField
+                      label="Telefon"
+                      type="tel"
+                      value={draft.phone}
+                      onChange={(value) => update({ phone: value })}
+                      placeholder="070-123 45 67"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-4 border-t border-stone-100 pt-6">
+                  <p className="border-l-2 border-stone-900 pl-3 text-[10px] font-bold uppercase tracking-[0.2em] text-stone-900">
+                    Bröllopet
+                  </p>
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                    <TextField
+                      label="Bröllopsdatum"
+                      type="date"
+                      value={draft.wedding_date}
+                      onChange={(value) => update({ wedding_date: value })}
+                    />
+                    <TextField
+                      label="Tid"
+                      type="time"
+                      value={draft.wedding_time}
+                      onChange={(value) => update({ wedding_time: value })}
+                    />
+                  </div>
+                  <TextField
+                    label="Plats / lokal"
+                    value={draft.venue}
+                    onChange={(value) => update({ venue: value })}
+                    placeholder="t.ex. Högbo Bruk"
+                  />
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                    <TextField
+                      label="Paket"
+                      value={draft.package}
+                      onChange={(value) => update({ package: value })}
+                      placeholder="t.ex. Hela dagen"
+                    />
+                    <TextField
+                      label="Följ upp datum"
+                      type="date"
+                      value={draft.follow_up_date}
+                      onChange={(value) => update({ follow_up_date: value })}
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-3 border-t border-stone-100 pt-6">
+                  <p className="border-l-2 border-stone-900 pl-3 text-[10px] font-bold uppercase tracking-[0.2em] text-stone-900">
+                    Anteckningar
+                  </p>
+                  <textarea
+                    rows={5}
+                    value={draft.notes}
+                    onChange={(event) => update({ notes: event.target.value })}
+                    placeholder="Vad pratade ni om? Önskemål, budget, stämning, platser att föreslå..."
+                    className="w-full resize-y border border-stone-200 p-3 text-sm font-light leading-relaxed outline-none transition-colors focus:border-stone-900"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="flex flex-col-reverse gap-3 border-t border-stone-100 pt-5 sm:flex-row sm:items-center">
+              {!isNew && clientId && (
+                <button
+                  type="button"
+                  onClick={() => setConfirmDelete(true)}
+                  className="inline-flex items-center justify-center gap-2 px-3 py-2 text-[8px] font-bold uppercase tracking-widest text-stone-300 transition-colors hover:text-rose-600"
+                >
+                  <Trash2 size={11} />
+                  Ta bort kund
+                </button>
+              )}
+              <div className="flex-1" />
+              <button
+                type="button"
+                onClick={onClose}
+                className="border border-stone-200 px-5 py-3 text-[9px] font-bold uppercase tracking-widest text-stone-400 transition-colors hover:border-stone-900 hover:text-stone-900"
+              >
+                Avbryt
+              </button>
+              <button
+                type="submit"
+                disabled={saving || uploading}
+                className="bg-stone-900 px-6 py-3 text-[9px] font-bold uppercase tracking-[0.2em] text-white shadow-md transition-colors hover:bg-stone-700 disabled:opacity-40"
+              >
+                {saving ? "Sparar..." : isNew ? "Spara kund" : "Spara ändringar"}
+              </button>
+            </div>
+          </form>
+        </div>
       </div>
 
-      <Modal
-        isOpen={confirmDelete}
-        title="Ta bort kund"
-        message={`Är du säker på att du vill ta bort ${draft.couple_names || "kunden"}? Det går inte att ångra.`}
-        type="danger"
-        onConfirm={handleDelete}
-        onClose={() => setConfirmDelete(false)}
-      />
+      {/* A viewport-fixed confirmation layer: its blur stays in place while the page scrolls. */}
+      {confirmDelete && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-stone-950/35 p-4 backdrop-blur-md">
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="delete-client-title"
+            className="w-full max-w-md border border-stone-200 bg-white p-6 shadow-2xl sm:p-7"
+          >
+            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-rose-50 text-rose-600">
+              <Trash2 size={17} />
+            </div>
+            <h3 id="delete-client-title" className="mt-4 text-sm font-semibold uppercase tracking-[0.16em] text-stone-900">
+              Ta bort kund
+            </h3>
+            <p className="mt-2 text-sm font-light leading-relaxed text-stone-500">
+              Är du säker på att du vill ta bort {draft.couple_names || "kunden"}? Det går inte att ångra.
+            </p>
+            <div className="mt-7 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+              <button
+                type="button"
+                onClick={() => setConfirmDelete(false)}
+                disabled={saving}
+                className="border border-stone-200 px-5 py-3 text-[9px] font-bold uppercase tracking-widest text-stone-500 transition-colors hover:border-stone-900 hover:text-stone-900 disabled:opacity-40"
+              >
+                Avbryt
+              </button>
+              <button
+                type="button"
+                onClick={() => void handleDelete()}
+                disabled={saving}
+                className="inline-flex items-center justify-center gap-2 bg-rose-600 px-5 py-3 text-[9px] font-bold uppercase tracking-widest text-white transition-colors hover:bg-rose-700 disabled:opacity-50"
+              >
+                {saving ? <Loader2 size={13} className="animate-spin" /> : <Trash2 size={13} />}
+                {saving ? "Tar bort..." : "Ja, ta bort"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
