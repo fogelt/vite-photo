@@ -1,5 +1,7 @@
 import { useState } from "react";
-import { ArrowRight, HeartHandshake, Info } from "lucide-react";
+import { ArrowRight, FileSignature, HeartHandshake, Info } from "lucide-react";
+import { useAuth } from "@clerk/clerk-react";
+import { supabase } from "@/services";
 import { ArticleAdmin, PhotoEditor, AboutAdmin, WeddingAdmin, WelcomeAdmin, EngagementAdmin, WeddingPlanner } from "@/components/ui";
 
 function AdminCard({ title, description, onClick, isActive, note }: { title: string; description: string; onClick: () => void, isActive: boolean, note?: string }) {
@@ -29,6 +31,7 @@ function AdminCard({ title, description, onClick, isActive, note }: { title: str
 
 export function AdminLayout() {
   type Site = 'portfolio' | 'wedding';
+  const { getToken } = useAuth();
   const [site, setSite] = useState<Site>('portfolio');
   const [activeTab, setActiveTab] = useState<string | null>(null);
   const [isArticleEditorOpen, setIsArticleEditorOpen] = useState(false);
@@ -37,6 +40,8 @@ export function AdminLayout() {
   const [isWelcomeEditorOpen, setIsWelcomeEditorOpen] = useState(false);
   const [isEngagementEditorOpen, setIsEngagementEditorOpen] = useState(false);
   const [isWeddingPlannerOpen, setIsWeddingPlannerOpen] = useState(false);
+  const [isOpeningContracts, setIsOpeningContracts] = useState(false);
+  const [contractError, setContractError] = useState<string | null>(null);
 
   const GALLERY_TABS: Record<Site, string[]> = {
     portfolio: ["portfolio", "weddings", "portraits", "about"],
@@ -67,6 +72,46 @@ export function AdminLayout() {
     closeAllEditors();
   };
 
+  const openContracts = async () => {
+    setContractError(null);
+    setIsOpeningContracts(true);
+
+    // Open a real top-level tab instead of navigating inside a sandboxed
+    // preview iframe. Opening it synchronously keeps popup blockers happy.
+    const adminWindow = window.open("about:blank", "_blank");
+    if (adminWindow) {
+      adminWindow.opener = null;
+    }
+
+    try {
+      const token = await getToken();
+      if (!token) {
+        throw new Error("Ingen Clerk-session hittades. Logga in igen.");
+      }
+
+      const { data, error } = await supabase.functions.invoke("contract-signer", {
+        headers: { Authorization: `Bearer ${token}` },
+        body: { action: "login" },
+      });
+
+      if (error) throw new Error(error.message);
+      if (!data?.redirectUrl) throw new Error("Kunde inte skapa en admin-session.");
+
+      if (adminWindow) {
+        adminWindow.location.href = data.redirectUrl as string;
+      } else {
+        window.location.assign(data.redirectUrl as string);
+      }
+    } catch (error) {
+      adminWindow?.close();
+      setContractError(
+        error instanceof Error ? error.message : "Kunde inte öppna kontrakten.",
+      );
+    } finally {
+      setIsOpeningContracts(false);
+    }
+  };
+
   return (
     <div className="max-w-7xl mx-auto px-4 py-20 animate-in fade-in duration-700">
 
@@ -87,32 +132,66 @@ export function AdminLayout() {
           </p>
         </div>
 
-        <button
-          onClick={() => {
-            closeAllEditors();
-            setIsWeddingPlannerOpen(true);
-          }}
-          className="group w-full border border-stone-100 bg-white p-6 md:p-8 text-left shadow-sm transition-all hover:border-stone-400 hover:shadow-md"
-        >
-          <div className="flex flex-col md:flex-row md:items-center gap-6">
-            <div className="flex h-14 w-14 shrink-0 items-center justify-center bg-stone-900 text-white">
-              <HeartHandshake size={22} />
+        <div className="grid gap-4 md:grid-cols-2">
+          <button
+            onClick={() => {
+              closeAllEditors();
+              setIsWeddingPlannerOpen(true);
+            }}
+            className="group w-full h-full border border-stone-100 bg-white p-6 md:p-8 text-left shadow-sm transition-all hover:border-stone-400 hover:shadow-md"
+          >
+            <div className="flex h-full flex-col md:flex-row md:items-center gap-6">
+              <div className="flex h-14 w-14 shrink-0 items-center justify-center bg-stone-900 text-white">
+                <HeartHandshake size={22} />
+              </div>
+              <div className="flex-1">
+                <h3 className="text-xs uppercase tracking-widest font-bold">Bröllopsplanering</h3>
+                <p className="text-[9px] text-stone-400 uppercase tracking-widest mt-1 font-bold">
+                  Kunder, samtal, bilder och kalender
+                </p>
+                <p className="mt-3 max-w-2xl text-xs font-light leading-relaxed text-stone-500">
+                  Skriv ner vad ni pratade om, spara ett foto på paret och se alla vigslar i en visuell kalender.
+                </p>
+              </div>
+              <div className="flex items-center gap-2 text-[9px] uppercase tracking-widest font-bold text-stone-900">
+                Öppna planering
+                <ArrowRight size={14} className="transition-transform group-hover:translate-x-1" />
+              </div>
             </div>
-            <div className="flex-1">
-              <h3 className="text-xs uppercase tracking-widest font-bold">Bröllopsplanering</h3>
-              <p className="text-[9px] text-stone-400 uppercase tracking-widest mt-1 font-bold">
-                Kunder, samtal, bilder och kalender
-              </p>
-              <p className="mt-3 max-w-2xl text-xs font-light leading-relaxed text-stone-500">
-                Skriv ner vad ni pratade om, spara ett foto på paret och se alla vigslar i en visuell kalender.
-              </p>
+          </button>
+
+          <button
+            type="button"
+            onClick={openContracts}
+            disabled={isOpeningContracts}
+            className="group w-full h-full border border-stone-100 bg-white p-6 md:p-8 text-left shadow-sm transition-all hover:border-stone-400 hover:shadow-md disabled:cursor-wait disabled:opacity-60"
+          >
+            <div className="flex h-full flex-col md:flex-row md:items-center gap-6">
+              <div className="flex h-14 w-14 shrink-0 items-center justify-center bg-stone-900 text-white">
+                <FileSignature size={22} />
+              </div>
+              <div className="flex-1">
+                <h3 className="text-xs uppercase tracking-widest font-bold">Bröllopskontrakt</h3>
+                <p className="text-[9px] text-stone-400 uppercase tracking-widest mt-1 font-bold">
+                  Skapa, signera och kontrasignera avtal
+                </p>
+                <p className="mt-3 max-w-2xl text-xs font-light leading-relaxed text-stone-500">
+                  Skapa och signera kontrakt med kunden direkt från.
+                </p>
+              </div>
+              <div className="flex items-center gap-2 text-[9px] uppercase tracking-widest font-bold text-stone-900">
+                {isOpeningContracts ? "Öppnar…" : "Öppna kontrakt"}
+                <ArrowRight size={14} className="transition-transform group-hover:translate-x-1" />
+              </div>
             </div>
-            <div className="flex items-center gap-2 text-[9px] uppercase tracking-widest font-bold text-stone-900">
-              Öppna planering
-              <ArrowRight size={14} className="transition-transform group-hover:translate-x-1" />
-            </div>
-          </div>
-        </button>
+          </button>
+        </div>
+
+        {contractError && (
+          <p className="mt-3 text-[10px] uppercase tracking-widest text-red-800" role="alert">
+            {contractError}
+          </p>
+        )}
       </div>
 
       {/* Site switcher: which site are we editing? */}
