@@ -1,3 +1,5 @@
+import { X } from "lucide-react";
+
 interface ModalProps {
   isOpen: boolean;
   title: string;
@@ -42,8 +44,9 @@ export function Modal({ isOpen, title, message, type = 'info', onConfirm, onClos
           ) : (
             <button
               onClick={onClose}
-              className="w-full bg-stone-900 text-white text-[9px] uppercase tracking-widest py-3 font-bold hover:bg-stone-700 transition-all"
+              className="inline-flex items-center gap-2 bg-stone-900 px-5 py-3 text-[9px] font-bold uppercase tracking-[0.2em] text-white shadow-md transition-colors hover:bg-stone-700"
             >
+              <X size={14} />
               Stäng
             </button>
           )}

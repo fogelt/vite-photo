@@ -360,8 +360,9 @@ export function WeddingPlanner({ onClose }: { onClose: () => void }) {
             <button
               type="button"
               onClick={onClose}
-              className="border-b border-stone-900 pb-1 text-[10px] font-bold uppercase tracking-[0.2em] text-stone-900 transition-colors hover:text-stone-500"
+              className="inline-flex items-center gap-2 bg-stone-900 px-5 py-3 text-[9px] font-bold uppercase tracking-[0.2em] text-white shadow-md transition-colors hover:bg-stone-700"
             >
+              <X size={14} />
               Stäng
             </button>
           </div>

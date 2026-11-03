@@ -157,7 +157,9 @@ export function ArticleAdmin({ onClose }: { onClose: () => void }) {
             <h2 className="text-xl font-light uppercase tracking-[0.3em]">Artiklar & Reportage</h2>
             <p className="text-[10px] text-stone-400 uppercase tracking-widest mt-2 font-medium">Administrationsläge</p>
           </div>
-          <button onClick={onClose} className="text-[10px] uppercase tracking-[0.2em] border-b border-stone-900 pb-1 font-bold">
+          <button onClick={onClose} className="inline-flex items-center gap-2 bg-stone-900 px-5 py-3 text-[9px] font-bold uppercase tracking-[0.2em] text-white shadow-md transition-colors hover:bg-stone-700"
+          >
+            <X size={14} />
             Stäng
           </button>
         </div>

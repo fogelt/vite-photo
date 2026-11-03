@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { supabase, createClerkSupabaseClient } from "@/services";
 import { useAuth } from "@clerk/clerk-react";
 import { Modal } from "@/components/ui";
+import { X } from "lucide-react";
 
 export function WelcomeAdmin({ onClose }: { onClose: () => void }) {
   const { getToken } = useAuth();
@@ -59,7 +60,11 @@ export function WelcomeAdmin({ onClose }: { onClose: () => void }) {
             <h2 className="text-xl font-light uppercase tracking-[0.3em]">Välkomsttext</h2>
             <p className="text-[10px] text-stone-400 uppercase tracking-widest mt-2 font-medium font-bold">Visas på bröllopssajten</p>
           </div>
-          <button onClick={onClose} className="text-[10px] uppercase tracking-[0.2em] border-b border-stone-900 pb-1 font-bold">Tillbaka</button>
+          <button onClick={onClose} className="inline-flex items-center gap-2 bg-stone-900 px-5 py-3 text-[9px] font-bold uppercase tracking-[0.2em] text-white shadow-md transition-colors hover:bg-stone-700"
+          >
+            <X size={14} />
+            Stäng
+          </button>
         </div>
 
         <form onSubmit={handleSave} className="space-y-8">
