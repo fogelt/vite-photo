@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { supabase } from "@/services";
 import { Link } from 'react-router-dom';
 import { LayoutGrid, BookOpen, Newspaper, ChevronDown, ListFilter, ExternalLink } from 'lucide-react';
+import { cloudinaryImage, cloudinarySrcSet } from '@/utils';
 
 interface DbArticle {
   id: string;
@@ -132,8 +133,12 @@ export function ArticlesLayout() {
               {/* Image Container */}
               <div className="relative aspect-[16/9] overflow-hidden bg-stone-100">
                 <img
-                  src={article.image_url}
+                  src={cloudinaryImage(article.image_url, { width: 1200 })}
+                  srcSet={cloudinarySrcSet(article.image_url, [400, 640, 900, 1200])}
+                  sizes="(min-width: 768px) 50vw, 100vw"
                   alt={article.title}
+                  loading="lazy"
+                  decoding="async"
                   className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105"
                 />
 

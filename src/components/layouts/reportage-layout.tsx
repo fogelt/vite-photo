@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { ImageContainer, ImageModal, Byline } from '@/components/ui/';
+import { cloudinaryImage } from '@/utils';
 import { CornerDownLeft } from 'lucide-react';
 
 interface ReportageLayoutProps {
@@ -8,6 +9,7 @@ interface ReportageLayoutProps {
 
 export function ReportageLayout({ article }: ReportageLayoutProps) {
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
+  const [preview, setPreview] = useState<{ id: string; src: string } | null>(null);
 
   //-- Split text logic --
   const paragraphs = (article.description || "").split('\n').filter((p: string) => p.trim() !== '');
@@ -43,9 +45,11 @@ export function ReportageLayout({ article }: ReportageLayoutProps) {
           </h1>
           <div className="w-full aspect-[16/10] md:aspect-[21/9] overflow-hidden shadow-sm mt-12">
             <img
-              src={article.image_url}
+              src={cloudinaryImage(article.image_url, { width: 2000 })}
               className="w-full h-full object-cover"
               alt={article.title}
+              loading="eager"
+              decoding="async"
             />
           </div>
           <Byline
@@ -79,9 +83,10 @@ export function ReportageLayout({ article }: ReportageLayoutProps) {
           <ImageContainer
             photos={photos}
             variant="reportage"
-            onItemClick={(photo) => {
+            onItemClick={(photo, previewSrc) => {
               const index = photos.findIndex((p: any) => p.id === photo.id);
               setSelectedIndex(index);
+              setPreview(previewSrc ? { id: photo.id, src: previewSrc } : null);
             }}
           />
         </div>
@@ -92,6 +97,7 @@ export function ReportageLayout({ article }: ReportageLayoutProps) {
         photos={photos}
         currentIndex={selectedIndex || 0}
         setCurrentIndex={setSelectedIndex}
+        preview={preview}
       />
     </article>
   );
