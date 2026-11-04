@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { ArrowRight, FileSignature, HeartHandshake, Info } from "lucide-react";
-import { useAuth, UserButton } from "@clerk/clerk-react";
+import { useAuth, UserButton, useUser } from "@clerk/clerk-react";
 import { supabase } from "@/services";
 import { ArticleAdmin } from "@/components/ui/admin-gui/article-editor";
 import { PhotoEditor } from "@/components/ui/admin-gui/photo-editor";
@@ -38,6 +38,9 @@ function AdminCard({ title, description, onClick, isActive, note }: { title: str
 export function AdminLayout() {
   type Site = 'portfolio' | 'wedding';
   const { getToken } = useAuth();
+  const { user } = useUser();
+  const displayName = user?.fullName || "Myelie Lendelund";
+  const displayEmail = user?.primaryEmailAddress?.emailAddress;
   const [site, setSite] = useState<Site>('portfolio');
   const [activeTab, setActiveTab] = useState<string | null>(null);
   const [isArticleEditorOpen, setIsArticleEditorOpen] = useState(false);
@@ -121,19 +124,37 @@ export function AdminLayout() {
   return (
     <div className="max-w-7xl mx-auto px-4 py-20 animate-in fade-in duration-700">
 
-      <div className="flex justify-between items-start mb-16 mr-48">
+      <div className="flex justify-between items-start gap-8 mb-16">
         <div>
           <h1 className="text-2xl font-light uppercase tracking-[0.4em] text-stone-900">Kontrollpanel</h1>
           <p className="text-[10px] text-stone-400 uppercase tracking-widest mt-2 font-bold">Välkommen tillbaka, Myelie</p>
         </div>
-        <UserButton
-          afterSignOutUrl="/"
-          appearance={{
-            elements: {
-              userButtonAvatarBox: "h-8 w-8 border border-stone-200",
-            },
-          }}
-        />
+
+        {/* Little profile card for the signed-in admin */}
+        <div className="flex min-w-0 items-center gap-3 border border-stone-200 bg-white px-4 py-3 shadow-sm">
+          <UserButton
+            afterSignOutUrl="/"
+            appearance={{
+              elements: {
+                userButtonAvatarBox: "h-10 w-10 border border-stone-200",
+                userButtonPopoverCard: "border border-stone-200 shadow-xl",
+              },
+            }}
+          />
+          <div className="min-w-0">
+            <p className="text-[9px] font-bold uppercase tracking-[0.25em] text-stone-400">
+              Administratör
+            </p>
+            <p className="truncate text-xs uppercase tracking-widest text-stone-800">
+              {displayName}
+            </p>
+            {displayEmail && (
+              <p className="truncate text-[10px] tracking-normal text-stone-400">
+                {displayEmail}
+              </p>
+            )}
+          </div>
+        </div>
       </div>
 
 
