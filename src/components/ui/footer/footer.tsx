@@ -1,4 +1,5 @@
 import { Instagram, Linkedin, Mail, MapPin, Camera, Phone } from 'lucide-react';
+import { AdminButton } from '@/components/ui/admin-button';
 
 
 export function Footer() {
@@ -7,6 +8,7 @@ export function Footer() {
   return (
     <footer className="w-full py-12 border-t border-gray-300 bg-white">
       <div className="flex flex-col items-center justify-center gap-6">
+        <AdminButton />
         {/* Social Icons Row */}
         <div className="flex items-center gap-8 text-gray-500">
           <a
