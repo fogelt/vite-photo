@@ -13,13 +13,28 @@ export default defineConfig({
     Sitemap({
       hostname: 'https://myeliefoto.se', // Replace with your actual domain
       dynamicRoutes: [
-        '/',
         '/weddings',
         '/portraits',
         '/articles',
         '/about',
       ],
-      exclude: ['/admin', '/sign-in', '/sign-up']
+      exclude: ['/admin', '/sign-in', '/sign-up', '/404'],
+      changefreq: 'monthly',
+      priority: {
+        '/': 1.0,
+        '/weddings': 0.9,
+        '/portraits': 0.9,
+        '/about': 0.7,
+        '/articles': 0.6,
+      },
+      generateRobotsTxt: true,
+      robots: [
+        {
+          userAgent: '*',
+          allow: '/',
+          disallow: ['/admin', '/sign-in', '/sign-up'],
+        },
+      ],
     }),
   ],
 

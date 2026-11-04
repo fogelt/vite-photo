@@ -5,9 +5,9 @@ import { useSEO } from '@/utils';
 
 export default function AboutRoute() {
   useSEO({
-    title: 'Om Mig | Professionell Fotograf i Skåne - Myelie Foto',
-    description: 'Läs om mig och min passion för fotografering. Professionell fotograf baserad i södra Sverige, specialiserad på bröllop, porträtt och reportage i Malmö och Skåne.',
-    keywords: 'om myelie, professionell fotograf, fotografkunskap, myelie foto, fotograf Skåne',
+    title: 'Om Myelie Lendelund | Fotograf i Skåne',
+    description: 'Lär känna Myelie Lendelund, fotograf i Skåne med fokus på bröllop, porträtt och reportage. Baserad i Skåne och verksam i Malmö, Lund och Helsingborg.',
+    keywords: 'Myelie Lendelund, fotograf Skåne, bröllopsfotograf Skåne, porträttfotograf Skåne',
     canonical: 'https://myeliefoto.se/about'
   });
   const { data: photos, isLoading } = useQuery({

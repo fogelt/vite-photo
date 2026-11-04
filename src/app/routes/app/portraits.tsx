@@ -5,9 +5,9 @@ import { useSEO } from '@/utils';
 
 export default function PortraitsRoute() {
   useSEO({
-    title: 'Porträttfotograf | Professionell Porträttfotografering i Södra Sverige',
-    description: 'Porträttfotograf erbjuder professionell porträttfotografering för familjer, företag och privatpersoner i Malmö, Lund, Helsingborg och Skåne.',
-    keywords: 'porträttfotograf, porträtt fotograf, porträttfotografering, porträttfotograf Malmö, familjefoto, profilbild fotograf',
+    title: 'Porträttfotograf i Skåne | Malmö, Lund & Helsingborg',
+    description: 'Porträttfotograf i Skåne för privatpersoner och företag. Naturliga porträtt och företagsbilder i Malmö, Lund, Helsingborg och övriga Skåne.',
+    keywords: 'porträttfotograf Skåne, porträttfotograf Malmö, porträttfotograf Lund, porträttfotograf Helsingborg, porträttfotografering Skåne, företagsporträtt Skåne',
     canonical: 'https://myeliefoto.se/portraits'
   });
   const { data: photos = [], isLoading, error } = useQuery({

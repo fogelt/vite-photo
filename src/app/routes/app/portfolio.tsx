@@ -5,9 +5,9 @@ import { useSEO } from '@/utils';
 
 export default function PortfolioRoute() {
   useSEO({
-    title: 'Fotograf Portfolio | Professionell Bröllopsfotograf & Porträttfotograf i Skåne',
-    description: 'Se min kompletta fotografi portfolio. Specialiserad på bröllop, porträtt och reportage fotografi i Malmö, Lund, Helsingborg och övriga Skåne.',
-    keywords: 'fotograf, bröllopsfotograf, porträttfotograf, proffs fotograf, fotograf Malmö, fotograf Lund, fotograf Helsingborg, Skåne',
+    title: 'Myelie Lendelund | Fotograf i Skåne',
+    description: 'Fotograf i Skåne med portfolio inom bröllop, porträtt och reportage. Baserad i Skåne och fotograferar i Malmö, Lund, Helsingborg och övriga Sverige.',
+    keywords: 'fotograf Skåne, fotograf Malmö, fotograf Lund, fotograf Helsingborg, bröllopsfotograf Skåne, porträttfotograf Skåne',
     canonical: 'https://myeliefoto.se/'
   });
   const { data: photos = [], isLoading, error } = useQuery({
