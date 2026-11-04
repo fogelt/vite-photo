@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { ArrowRight, ChevronDown, Mail, Phone } from "lucide-react";
 import { fetchPhotosByTag, supabase } from "@/services";
+import { ImageContainer } from "@/components/ui";
 
 const CONTACT_EMAIL = "myelie@live.se";
 const CONTACT_PHONE = "+46 72 16 82 019";
@@ -117,7 +118,7 @@ export function WeddingSitePreview({ items }: { items: any[] }) {
         </div>
       </div>
 
-      <WeddingMosaic photos={introPhotos} />
+      <ImageContainer photos={introPhotos} variant="editorial" skeletonCount={8} />
 
       {/* Bröllopspaket */}
       <div className="py-12 md:py-16">
@@ -236,7 +237,7 @@ export function WeddingSitePreview({ items }: { items: any[] }) {
       </div>
 
       {/* Galleriet fortsätter efter förlovningen */}
-      {galleryPhotos.length > 0 && <WeddingMosaic photos={galleryPhotos} />}
+      {galleryPhotos.length > 0 && <ImageContainer photos={galleryPhotos} variant="editorial" />}
 
       {/* Kontakt */}
       <div className="border-t border-stone-200 bg-white">
@@ -347,48 +348,6 @@ function HeroStrip({
           aria-hidden="true"
         />
       )}
-    </div>
-  );
-}
-
-/** The wedding site's editorial mosaic rhythm (||-|, |-|| and --|). */
-function WeddingMosaic({ photos }: { photos: any[] }) {
-  const [loaded, setLoaded] = useState<Record<string, boolean>>({});
-
-  const sizingClass = (index: number) => {
-    switch (index % 11) {
-      case 2:
-      case 5:
-        return "h-[60vh] w-full md:h-auto md:aspect-[3/2] md:w-[calc(43%_-_11px)]";
-      case 8:
-      case 9:
-        return "h-[60vh] w-full md:h-auto md:aspect-[3/2] md:w-[calc(41%_-_7px)]";
-      case 10:
-        return "h-[60vh] w-full md:h-auto md:aspect-[2/3] md:w-[calc(18%_-_3.5px)]";
-      default:
-        return "h-[60vh] w-full md:h-auto md:aspect-[2/3] md:w-[calc(19%_-_5px)]";
-    }
-  };
-
-  return (
-    <div className="mx-auto flex w-[93%] max-w-[2000px] flex-wrap justify-center gap-2 p-2">
-      {photos.map((photo, index) => (
-        <div
-          key={photo.id}
-          className={`${sizingClass(index)} overflow-hidden bg-stone-50 transition-opacity duration-1000 ${
-            loaded[photo.id] ? "opacity-100" : "opacity-0"
-          }`}
-        >
-          <img
-            src={photo.url}
-            alt={photo.alt || "Bröllopsfotografi i Skåne"}
-            loading="lazy"
-            decoding="async"
-            onLoad={() => setLoaded((prev) => ({ ...prev, [photo.id]: true }))}
-            className="h-full w-full object-cover object-[center_70%]"
-          />
-        </div>
-      ))}
     </div>
   );
 }

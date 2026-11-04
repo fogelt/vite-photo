@@ -22,6 +22,13 @@ interface WeddingPackage {
 
 export function WeddingsLayout({ photos, isLoading }: { photos: Photo[], isLoading?: boolean }) {
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
+  const [preview, setPreview] = useState<{ id: string; src: string } | null>(null);
+
+  const openPhoto = (photo: Photo, previewSrc?: string) => {
+    const index = photos.findIndex(p => p.id === photo.id);
+    setSelectedIndex(index);
+    setPreview(previewSrc ? { id: photo.id, src: previewSrc } : null);
+  };
 
   // Fetch dynamic packages from Supabase
   const { data: packages, isLoading: pricingLoading } = useQuery({
@@ -46,11 +53,9 @@ export function WeddingsLayout({ photos, isLoading }: { photos: Photo[], isLoadi
       <ImageContainer
         photos={firstThree}
         variant="weddings"
-        onItemClick={(photo) => {
-          const index = photos.findIndex(p => p.id === photo.id);
-          setSelectedIndex(index);
-        }}
+        onItemClick={openPhoto}
         isLoading={isLoading}
+        skeletonCount={3}
       />
 
       {/* Pricing Section */}
@@ -119,10 +124,7 @@ export function WeddingsLayout({ photos, isLoading }: { photos: Photo[], isLoadi
       <ImageContainer
         photos={theRest}
         variant="weddings"
-        onItemClick={(photo) => {
-          const index = photos.findIndex(p => p.id === photo.id);
-          setSelectedIndex(index);
-        }}
+        onItemClick={openPhoto}
         isLoading={isLoading}
       />
 
@@ -132,6 +134,7 @@ export function WeddingsLayout({ photos, isLoading }: { photos: Photo[], isLoadi
         photos={photos}
         currentIndex={selectedIndex || 0}
         setCurrentIndex={setSelectedIndex}
+        preview={preview}
       />
     </section>
   );

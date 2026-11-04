@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { ImageCard } from '@/components/ui';
 import { supabase } from "@/services";
@@ -13,8 +12,6 @@ const FALLBACK_TEXT =
   "Grattis till förlovningen — vilken tid! En förlovningsfotografering är det perfekta genrepet inför bröllopet: ni får vänja er vid kameran (och mig!) i lugn och ro, utan tidsschema och gäster.\n\nPå köpet får ni avslappnade bilder att använda till inbjudningar, hemsidan eller väggen därhemma. Många par säger att det var då nervositeten inför bröllopsdagen släppte.";
 
 export function EngagementSection({ image, isLoading: isImageLoading }: EngagementSectionProps) {
-  const [imageLoaded, setImageLoaded] = useState(false);
-
   const { data: content, isLoading: isTextLoading } = useQuery({
     queryKey: ["engagement_content"],
     queryFn: async () => {
@@ -50,15 +47,12 @@ export function EngagementSection({ image, isLoading: isImageLoading }: Engageme
           {isImageLoading ? (
             <div className="aspect-[210/297] w-full bg-stone-50 animate-pulse" />
           ) : image?.url ? (
-            <div className={`transition-opacity duration-1000 ${imageLoaded ? 'opacity-100' : 'opacity-0'}`}>
-              <ImageCard
-                url={image.url}
-                alt={image.alt || "Förlovningsfotografering"}
-                className={`h-auto w-full ${imageLoaded ? 'animate-in fade-in slide-in-from-bottom-8 duration-1000 fill-mode-both delay-300' : ''
-                  }`}
-                onLoad={() => setImageLoaded(true)}
-              />
-            </div>
+            <ImageCard
+              url={image.url}
+              alt={image.alt || "Förlovningsfotografering"}
+              sizes="(min-width: 768px) 50vw, 100vw"
+              className="h-auto w-full"
+            />
           ) : null}
         </div>
 

@@ -1,6 +1,18 @@
 import { supabase } from "@/services";
+import { cloudinaryImage } from "@/utils/cloudinary";
 
 const CLOUD_NAME = "dtscgoycp";
+
+/** Human-friendly alt text per photo tag, for image SEO and accessibility. */
+const TAG_LABELS: Record<string, string> = {
+  weddings_main: "Bröllopsfotografi i Skåne",
+  engagement: "Förlovningsfotografi i Skåne",
+};
+
+function photoAlt(tag: string) {
+  if (tag === "about") return "Myelie Lendelund, bröllopsfotograf i Skåne";
+  return `${TAG_LABELS[tag] ?? "Fotografi i Skåne"} av Myelie Lendelund`;
+}
 
 interface CloudinaryResource {
   public_id: string;
@@ -12,16 +24,34 @@ export async function fetchPhotosByTag(tag: string | null) {
   if (!tag) return [];
 
   try {
-    const cacheBuster = new Date().getTime();
+    // Bucket the cache buster so repeated visits within a few minutes reuse the
+    // cached Cloudinary list instead of forcing a fresh round trip every time.
+    const cacheBuster = Math.floor(Date.now() / (5 * 60 * 1000));
 
-    const { data: blacklist } = await supabase
-      .from("photo_blacklist")
-      .select("photo_id");
+    // All three requests are independent — run them in parallel so the gallery
+    // is ready after one round trip instead of three.
+    const [blacklistResult, response, dbResult] = await Promise.all([
+      supabase.from("photo_blacklist").select("photo_id"),
+      fetch(`https://res.cloudinary.com/${CLOUD_NAME}/image/list/${tag}.json?cb=${cacheBuster}`),
+      supabase
+        .from("photo_order")
+        .select(`
+          *,
+          photo_variants (
+            id,
+            url,
+            position
+          ),
+          photo_descriptions (
+            description
+          )
+        `)
+        .eq("tag", tag)
+        .order("position", { ascending: true }),
+    ]);
 
-    const blacklistedIds = new Set(blacklist?.map((b) => b.photo_id) || []);
-
-    const response = await fetch(
-      `https://res.cloudinary.com/${CLOUD_NAME}/image/list/${tag}.json?cb=${cacheBuster}`
+    const blacklistedIds = new Set(
+      blacklistResult.data?.map((b) => b.photo_id) || []
     );
 
     let cloudResources: CloudinaryResource[] = [];
@@ -32,21 +62,7 @@ export async function fetchPhotosByTag(tag: string | null) {
       );
     }
 
-    const { data: dbOrder, error } = await supabase
-      .from("photo_order")
-      .select(`
-        *,
-        photo_variants (
-          id,
-          url,
-          position
-        ),
-        photo_descriptions (
-          description
-        )
-      `)
-      .eq("tag", tag)
-      .order("position", { ascending: true });
+    const { data: dbOrder, error } = dbResult;
 
     if (error) throw error;
 
@@ -66,8 +82,8 @@ export async function fetchPhotosByTag(tag: string | null) {
 
         return {
           id: item.id,
-          url: item.url,
-          alt: `${tag} av Myelie Lendelund`,
+          url: cloudinaryImage(item.url),
+          alt: photoAlt(tag),
           description: descriptionText,
           photo_variants: item.photo_variants?.sort((a: any, b: any) => a.position - b.position) || []
         };
@@ -76,8 +92,10 @@ export async function fetchPhotosByTag(tag: string | null) {
         .filter((r: CloudinaryResource) => !sortedIds.has(r.public_id))
         .map((r: CloudinaryResource) => ({
           id: r.public_id,
-          url: `https://res.cloudinary.com/${CLOUD_NAME}/image/upload/f_auto,q_auto,c_fill,g_faces/${r.public_id}.${r.format}`,
-          alt: `${tag} av Myelie Lendelund`,
+          url: cloudinaryImage(
+            `https://res.cloudinary.com/${CLOUD_NAME}/image/upload/${r.public_id}.${r.format}`
+          ),
+          alt: photoAlt(tag),
           description: "",
           photo_variants: []
         }))

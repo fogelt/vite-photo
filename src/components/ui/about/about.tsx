@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { ImageCard } from '@/components/ui';
+import { cloudinaryImage } from '@/utils';
 import { supabase } from "@/services";
 import { useQuery } from "@tanstack/react-query";
 import { Globe, Mail, Phone } from 'lucide-react'
@@ -50,15 +51,13 @@ export function AboutSection({ image, isLoading: isImageLoading }: AboutSectionP
           {isImageLoading ? (
             <div className="aspect-[3/4] w-full bg-stone-50 animate-pulse" />
           ) : image?.url ? (
-            <div className={`transition-opacity duration-1000 ${imageLoaded ? 'opacity-100' : 'opacity-0'}`}>
-              <ImageCard
-                url={image.url}
-                alt={portraitAlt}
-                className={`aspect-[3/4] w-full object-cover ${imageLoaded ? 'animate-in fade-in slide-in-from-bottom-8 duration-1000 fill-mode-both delay-300' : ''
-                  }`}
-                onLoad={() => setImageLoaded(true)}
-              />
-            </div>
+            <ImageCard
+              url={image.url}
+              alt={portraitAlt}
+              sizes="380px"
+              className="aspect-[3/4] w-full"
+              onLoad={() => setImageLoaded(true)}
+            />
           ) : null}
         </div>
 
@@ -75,8 +74,10 @@ export function AboutSection({ image, isLoading: isImageLoading }: AboutSectionP
                 <div className="md:hidden w-20 h-24 rounded-sm bg-stone-100 animate-pulse shrink-0" />
               ) : image?.url ? (
                 <img
-                  src={image.url}
+                  src={cloudinaryImage(image.url, { width: 400 })}
                   alt={portraitAlt}
+                  loading="lazy"
+                  decoding="async"
                   onLoad={() => setImageLoaded(true)}
                   className={`md:hidden w-20 h-24 object-cover rounded-sm ring-1 ring-stone-200 shrink-0 transition-opacity duration-1000 ${imageLoaded ? 'opacity-100' : 'opacity-0'}`}
                 />
