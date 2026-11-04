@@ -11,18 +11,25 @@ const ADMIN_AVATAR = '/admin-avatar.png';
 function hasClerkSession() {
   if (typeof document === 'undefined') return false;
 
-  const signInCookiePrefixes = ['__client_uat', '__clerk_db_jwt', '__session'];
-
   return document.cookie
     .split(';')
     .map((cookie) => cookie.trim())
     .some((cookie) => {
       const [name, ...valueParts] = cookie.split('=');
-      if (!signInCookiePrefixes.some((prefix) => name.startsWith(prefix))) {
-        return false;
-      }
       const value = valueParts.join('=');
-      return value !== '' && value !== '0';
+
+      // Clerk's readable "updated at" cookie is a Unix timestamp when a
+      // session exists, and 0 when signed out.
+      if (name.startsWith('__client_uat')) {
+        return /^\d+$/.test(value) && Number(value) > 0;
+      }
+
+      // Dev-only Clerk cookie; production session cookies are HttpOnly.
+      if (name.startsWith('__clerk_db_jwt')) {
+        return value.length > 0;
+      }
+
+      return false;
     });
 }
 
