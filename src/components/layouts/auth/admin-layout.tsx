@@ -1,8 +1,14 @@
 import { useState } from "react";
 import { ArrowRight, FileSignature, HeartHandshake, Info } from "lucide-react";
-import { useAuth } from "@clerk/clerk-react";
+import { useAuth, UserButton } from "@clerk/clerk-react";
 import { supabase } from "@/services";
-import { ArticleAdmin, PhotoEditor, AboutAdmin, WeddingAdmin, WelcomeAdmin, EngagementAdmin, WeddingPlanner } from "@/components/ui";
+import { ArticleAdmin } from "@/components/ui/admin-gui/article-editor";
+import { PhotoEditor } from "@/components/ui/admin-gui/photo-editor";
+import { AboutAdmin } from "@/components/ui/admin-gui/about-editor";
+import { WeddingAdmin } from "@/components/ui/admin-gui/weddings-editor";
+import { WelcomeAdmin } from "@/components/ui/admin-gui/welcome-editor";
+import { EngagementAdmin } from "@/components/ui/admin-gui/engagement-editor";
+import { WeddingPlanner } from "@/components/ui/admin-gui/wedding-planner";
 
 function AdminCard({ title, description, onClick, isActive, note }: { title: string; description: string; onClick: () => void, isActive: boolean, note?: string }) {
   return (
@@ -120,6 +126,14 @@ export function AdminLayout() {
           <h1 className="text-2xl font-light uppercase tracking-[0.4em] text-stone-900">Kontrollpanel</h1>
           <p className="text-[10px] text-stone-400 uppercase tracking-widest mt-2 font-bold">Välkommen tillbaka, Myelie</p>
         </div>
+        <UserButton
+          afterSignOutUrl="/"
+          appearance={{
+            elements: {
+              userButtonAvatarBox: "h-8 w-8 border border-stone-200",
+            },
+          }}
+        />
       </div>
 
 

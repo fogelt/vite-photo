@@ -3,7 +3,6 @@ import { useMemo } from 'react';
 import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 
 import { paths } from '@/config/paths';
-import { AdminGuard } from '@/components/auth';
 import {
   default as AppRoot,
   ErrorBoundary as AppRootErrorBoundary,
@@ -41,7 +40,9 @@ export const createAppRouter = (queryClient: QueryClient) =>
         { path: paths.reportage.path, lazy: () => import('./routes/app/reportage').then(convert(queryClient)) },
         {
           path: 'admin',
-          element: <AdminGuard />,
+          // Loaded only when someone opens the admin area, so Clerk and its
+          // cookies never touch public visits.
+          lazy: () => import('./routes/auth/admin-shell').then(convert(queryClient)),
           children: [
             {
               index: true,
