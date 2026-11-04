@@ -19,17 +19,11 @@ function hasClerkSession() {
       const value = valueParts.join('=');
 
       // Clerk's readable "updated at" cookie is a Unix timestamp when a
-      // session exists, and 0 when signed out.
-      if (name.startsWith('__client_uat')) {
-        return /^\d+$/.test(value) && Number(value) > 0;
-      }
+      // session exists, and 0 when signed out. The dev-only __clerk_db_jwt
+      // cookie is set even while signed out, so it is not a valid signal.
+      if (!name.startsWith('__client_uat')) return false;
 
-      // Dev-only Clerk cookie; production session cookies are HttpOnly.
-      if (name.startsWith('__clerk_db_jwt')) {
-        return value.length > 0;
-      }
-
-      return false;
+      return /^\d+$/.test(value) && Number(value) > 0;
     });
 }
 
