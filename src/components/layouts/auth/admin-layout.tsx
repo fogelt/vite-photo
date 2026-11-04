@@ -124,14 +124,11 @@ export function AdminLayout() {
   return (
     <div className="max-w-7xl mx-auto px-4 py-20 animate-in fade-in duration-700">
 
-      <div className="flex justify-between items-start gap-8 mb-16">
-        <div>
-          <h1 className="text-2xl font-light uppercase tracking-[0.4em] text-stone-900">Kontrollpanel</h1>
-          <p className="text-[10px] text-stone-400 uppercase tracking-widest mt-2 font-bold">Välkommen tillbaka, Myelie</p>
-        </div>
+      <div className="mb-16">
+        <h1 className="text-2xl font-light uppercase tracking-[0.4em] text-stone-900">Kontrollpanel</h1>
 
         {/* Little profile card for the signed-in admin */}
-        <div className="flex min-w-0 items-center gap-3 border border-stone-200 bg-white px-4 py-3 shadow-sm">
+        <div className="mt-5 inline-flex max-w-full items-center gap-3 border border-stone-200 bg-white px-4 py-3 shadow-sm">
           <UserButton
             afterSignOutUrl="/"
             appearance={{
@@ -141,15 +138,15 @@ export function AdminLayout() {
               },
             }}
           />
-          <div className="min-w-0">
+          <div className="min-w-0 space-y-1 py-0.5">
             <p className="text-[9px] font-bold uppercase tracking-[0.25em] text-stone-400">
               Administratör
             </p>
-            <p className="truncate text-xs uppercase tracking-widest text-stone-800">
+            <p className="truncate text-sm font-light tracking-[0.06em] text-stone-800">
               {displayName}
             </p>
             {displayEmail && (
-              <p className="truncate text-[10px] tracking-normal text-stone-400">
+              <p className="truncate text-[10px] tracking-[0.04em] text-stone-400">
                 {displayEmail}
               </p>
             )}
