@@ -1,5 +1,5 @@
 import { Instagram, Linkedin, Mail, MapPin, Camera, Phone } from 'lucide-react';
-import { AdminButton } from '@/components/ui';
+import { AdminButton } from '@/components/ui/admin-button';
 
 
 export function Footer() {

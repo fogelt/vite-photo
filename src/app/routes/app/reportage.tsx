@@ -2,7 +2,7 @@ import { useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/services";
 import { ReportageLayout } from "@/components/layouts/reportage-layout";
-import { useSEO } from '@/utils';
+import { cloudinaryImage, useSEO } from '@/utils';
 
 export default function ReportageRoute() {
   const { slug } = useParams();
@@ -22,11 +22,21 @@ export default function ReportageRoute() {
   });
 
   // Set SEO with dynamic data from article
+  const rawDescription = (
+    article?.description || 'Fotoreportage av Myelie Lendelund, fotograf i Skåne.'
+  ).replace(/\s+/g, ' ').trim();
+  const description =
+    rawDescription.length > 160
+      ? `${rawDescription.slice(0, 157).trimEnd()}…`
+      : rawDescription;
+
   useSEO({
-    title: article?.title ? `${article.title} | Fotografering` : 'Fotoreportage | Myelie Foto',
-    description: article?.description || 'Fotoreportage från professionell fotograf',
-    keywords: 'fotoreportage, reportage, fotografi',
-    canonical: `https://myeliefoto.se/reportage/${slug}`
+    title: article?.title ? `${article.title} | Myelie Lendelund` : 'Fotoreportage | Myelie Lendelund',
+    description,
+    keywords: 'fotoreportage, reportage, fotograf Skåne, bröllopsfotograf Skåne',
+    canonical: `https://myeliefoto.se/reportage/${article?.slug || slug}`,
+    ogImage: article?.image_url ? cloudinaryImage(article.image_url, { width: 1200 }) : undefined,
+    ogType: 'article'
   });
 
   if (isLoading) return;
