@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useQuery } from "@tanstack/react-query";
+import { ArrowRight } from 'lucide-react';
 import { supabase } from "@/services";
 import { ImageContainer, ImageModal } from '@/components/ui';
 
@@ -117,6 +118,24 @@ export function WeddingsLayout({ photos, isLoading }: { photos: Photo[], isLoadi
               </div>
             ))
           )}
+        </div>
+
+        <div className="mt-12 text-center">
+          <a
+            href="https://myeliebrollopsfoto.se"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="group inline-flex items-center gap-3 text-[11px] uppercase tracking-[0.3em] text-stone-900"
+          >
+            <span className="border-b border-stone-300 pb-1 transition-colors duration-300 group-hover:border-black">
+              Se fler bröllopsbilder på myeliebrollopsfoto.se
+            </span>
+            <ArrowRight
+              size={14}
+              strokeWidth={1.5}
+              className="transition-transform duration-300 group-hover:translate-x-1"
+            />
+          </a>
         </div>
       </div>
 
