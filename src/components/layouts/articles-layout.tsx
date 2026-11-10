@@ -1,19 +1,18 @@
-import { useMemo, useState, type ReactNode } from "react";
+import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/services";
+import { Dropdown } from "@/components/ui";
 import { Link } from "react-router-dom";
 import {
   ArrowUpDown,
   BookOpen,
   CalendarDays,
-  ChevronDown,
   ExternalLink,
   LayoutGrid,
   Newspaper,
   Search,
   SlidersHorizontal,
   X,
-  type LucideIcon,
 } from "lucide-react";
 import { cloudinaryImage, cloudinarySrcSet } from "@/utils";
 
@@ -53,13 +52,13 @@ const typeOptions = [
 ] as const;
 
 const sortOptions = [
-  { id: "newest", label: "Senaste först" },
-  { id: "oldest", label: "Äldsta först" },
-  { id: "title", label: "A–Ö" },
+  { value: "newest", label: "Senaste först" },
+  { value: "oldest", label: "Äldsta först" },
+  { value: "title", label: "A–Ö" },
 ] as const;
 
 type TypeFilter = (typeof typeOptions)[number]["id"];
-type SortOrder = (typeof sortOptions)[number]["id"];
+type SortOrder = (typeof sortOptions)[number]["value"];
 
 function parsePublishedDate(value: string) {
   const [monthName = "", yearValue = ""] = (value ?? "")
@@ -89,47 +88,6 @@ function articleTimestamp(article: DbArticle) {
 
   const created = Date.parse(article.created_at ?? "");
   return Number.isNaN(created) ? 0 : created;
-}
-
-function FilterSelect({
-  label,
-  value,
-  onChange,
-  icon: Icon,
-  children,
-  className = "",
-}: {
-  label: string;
-  value: string;
-  onChange: (value: string) => void;
-  icon: LucideIcon;
-  children: ReactNode;
-  className?: string;
-}) {
-  return (
-    <label
-      className={`relative inline-flex w-full items-center sm:w-auto ${className}`}
-    >
-      <Icon
-        size={13}
-        className="pointer-events-none absolute left-3 text-stone-400"
-        aria-hidden="true"
-      />
-      <select
-        aria-label={label}
-        value={value}
-        onChange={(event) => onChange(event.target.value)}
-        className="h-10 w-full appearance-none border border-stone-200 bg-white pl-9 pr-9 text-[9px] font-bold uppercase tracking-widest text-stone-600 outline-none transition-colors hover:border-stone-400 focus:border-stone-900 sm:w-auto"
-      >
-        {children}
-      </select>
-      <ChevronDown
-        size={12}
-        className="pointer-events-none absolute right-3 text-stone-400"
-        aria-hidden="true"
-      />
-    </label>
-  );
 }
 
 export function ArticlesLayout() {
@@ -282,47 +240,43 @@ export function ArticlesLayout() {
           </div>
 
           <div className="grid grid-cols-2 gap-2 lg:flex lg:flex-wrap lg:items-center">
-            <FilterSelect
+            <Dropdown
               label="Filtrera på publikation"
               value={publisherFilter}
               onChange={setPublisherFilter}
               icon={SlidersHorizontal}
               className="col-span-2 lg:col-auto"
-            >
-              <option value="all">Alla publikationer</option>
-              {publishers.map((publisher) => (
-                <option key={publisher} value={publisher}>
-                  {publisher}
-                </option>
-              ))}
-            </FilterSelect>
+              options={[
+                { value: "all", label: "Alla publikationer" },
+                ...publishers.map((publisher) => ({
+                  value: publisher,
+                  label: publisher,
+                })),
+              ]}
+            />
 
-            <FilterSelect
+            <Dropdown
               label="Filtrera på år"
               value={yearFilter}
               onChange={setYearFilter}
               icon={CalendarDays}
-            >
-              <option value="all">Alla år</option>
-              {years.map((year) => (
-                <option key={year} value={String(year)}>
-                  {year}
-                </option>
-              ))}
-            </FilterSelect>
+              options={[
+                { value: "all", label: "Alla år" },
+                ...years.map((year) => ({
+                  value: String(year),
+                  label: String(year),
+                })),
+              ]}
+            />
 
-            <FilterSelect
+            <Dropdown
               label="Sortera artiklar"
               value={sortOrder}
               onChange={(value) => setSortOrder(value as SortOrder)}
               icon={ArrowUpDown}
-            >
-              {sortOptions.map((option) => (
-                <option key={option.id} value={option.id}>
-                  {option.label}
-                </option>
-              ))}
-            </FilterSelect>
+              align="right"
+              options={sortOptions}
+            />
 
             {hasFilters && (
               <button
