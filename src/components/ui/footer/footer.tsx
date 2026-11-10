@@ -1,14 +1,34 @@
-import { Instagram, Linkedin, Mail, MapPin, Camera, Phone } from 'lucide-react';
+import { ArrowLeft, Instagram, Linkedin, Mail, MapPin, Camera, Phone } from 'lucide-react';
+import { Link, useLocation } from 'react-router-dom';
 import { AdminButton } from '@/components/ui/admin-button';
 
 
 export function Footer() {
   const currentYear = new Date().getFullYear();
+  const { pathname } = useLocation();
+  const isAdmin = pathname.startsWith('/admin');
 
   return (
     <footer className="w-full py-12 border-t border-gray-300 bg-white">
       <div className="flex flex-col items-center justify-center gap-6">
-        <AdminButton />
+        {isAdmin ? (
+          <div className="hidden lg:flex absolute left-8 top-1/2 -translate-y-1/2 z-[70]">
+            <Link
+              to="/"
+              aria-label="Tillbaka till sajten"
+              className="group flex flex-col items-center gap-1"
+            >
+              <span className="flex h-7 w-7 items-center justify-center rounded-full border border-stone-100 text-stone-400 transition-colors group-hover:text-stone-800">
+                <ArrowLeft size={13} strokeWidth={1.5} aria-hidden="true" />
+              </span>
+              <span className="text-[8px] uppercase tracking-[0.2em] text-stone-400 transition-colors group-hover:text-stone-800">
+                Tillbaka
+              </span>
+            </Link>
+          </div>
+        ) : (
+          <AdminButton />
+        )}
         {/* Social Icons Row */}
         <div className="flex items-center gap-8 text-gray-500">
           <a
@@ -70,6 +90,15 @@ export function Footer() {
             <span>Sverige</span>
           </div>
         </div>
+
+        <a
+          href="https://sign.myeliefoto.se/privacy.html"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-[10px] tracking-[0.2em] uppercase text-gray-400 font-light hover:text-black transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-black rounded-sm outline-none"
+        >
+          Integritetspolicy
+        </a>
       </div>
     </footer>
   );

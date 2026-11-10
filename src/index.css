@@ -43,3 +43,12 @@
     border-radius: 0px; /* Kantig look för tidningskänsla */
   }
 }
+
+@keyframes download-progress {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
