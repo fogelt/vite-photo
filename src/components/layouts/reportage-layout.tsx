@@ -18,7 +18,7 @@ export function ReportageLayout({ article }: ReportageLayoutProps) {
   const secondHalf = paragraphs.slice(splitPoint).join('\n\n');
 
   const photos = (article.content_blocks || [])
-    .filter((block: any) => block.type === 'image')
+    .filter((block: any) => block.type === 'image' && block.value)
     .map((block: any) => ({
       id: block.id,
       url: block.value,

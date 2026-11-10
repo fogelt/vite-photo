@@ -283,6 +283,54 @@ export function ImageContainer({
     }
   };
 
+  if (variant === 'reportage') {
+    const columnClass = !isLoading && photos.length === 1
+      ? "columns-1 max-w-4xl"
+      : !isLoading && photos.length === 2
+        ? "columns-1 max-w-6xl sm:columns-2"
+        : "columns-1 max-w-7xl sm:columns-2 lg:columns-3";
+
+    return (
+      <div className={`mx-auto w-full gap-3 p-2 ${columnClass}`}>
+        {displayPhotos.map((photo, index) => {
+          if (isLoading) {
+            return (
+              <div
+                key={photo.id}
+                className="mb-3 aspect-[3/2] break-inside-avoid animate-pulse bg-neutral-100"
+                aria-hidden="true"
+              />
+            );
+          }
+
+          return (
+            <div
+              key={photo.id}
+              className="mb-3 break-inside-avoid"
+              onPointerEnter={() => warmVariantThumbs(photo)}
+              onPointerDown={() => warmVariantThumbs(photo)}
+            >
+              {renderItem ? (
+                renderItem(photo, index, 'w-full')
+              ) : (
+                <ImageCard
+                  url={photo.url}
+                  alt={photo.alt}
+                  className="w-full"
+                  imgClassName="w-full h-auto object-cover object-[center_70%] transition-[opacity,transform] duration-700 ease-out group-hover:scale-[1.04]"
+                  sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
+                  revealDelay={Math.min(index, 4) * 60}
+                  onClick={(previewSrc) => onItemClick?.(photo, previewSrc)}
+                  has_variant={photo.photo_variants?.length ? <Images size={15} /> : null}
+                />
+              )}
+            </div>
+          );
+        })}
+      </div>
+    );
+  }
+
   return (
     <div className={`flex flex-wrap p-2 w-[93%] mx-auto justify-center ${variant === 'reportage' ? ' gap-1 max-w-[1000px]' : ' gap-2 max-w-[2000px]'
       }`}>
