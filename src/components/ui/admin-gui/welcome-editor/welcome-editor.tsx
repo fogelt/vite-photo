@@ -3,32 +3,13 @@ import { supabase, createClerkSupabaseClient } from "@/services";
 import { useAuth } from "@clerk/clerk-react";
 import { Modal } from "@/components/ui";
 import { X } from "lucide-react";
+import {
+  DEFAULT_PROCESS_STEPS,
+  PROCESS_ICON_OPTIONS,
+  type ProcessStep,
+} from "../process-icons";
 
 const DEFAULT_PROCESS_EYEBROW = "Så funkar det";
-
-interface ProcessStep {
-  title: string;
-  text: string;
-}
-
-const DEFAULT_PROCESS_STEPS: ProcessStep[] = [
-  {
-    title: "Hör av er",
-    text: "Berätta om datum, plats och vad ni drömmer om. Vi börjar med ett samtal där ni får ställa alla frågor.",
-  },
-  {
-    title: "Vi planerar tillsammans",
-    text: "Vi går igenom tider, platser och vilka ögonblick som är viktigast för er. Inga detaljer är för små.",
-  },
-  {
-    title: "Bröllopsdagen",
-    text: "Jag fotograferar närvarande och lugnt, med plats för både det stora och det lilla som händer runtomkring.",
-  },
-  {
-    title: "Bilderna",
-    text: "Ett genomtänkt urval av redigerade bilder levereras digitalt, redo att sparas och återvända till i många år.",
-  },
-];
 
 export function WelcomeAdmin({ onClose }: { onClose: () => void }) {
   const { getToken } = useAuth();
@@ -55,6 +36,7 @@ export function WelcomeAdmin({ onClose }: { onClose: () => void }) {
             data.process_steps.map((step: any) => ({
               title: step.title || "",
               text: step.text || "",
+              icon: typeof step.icon === "string" ? step.icon : undefined,
             }))
           );
         }
@@ -73,7 +55,10 @@ export function WelcomeAdmin({ onClose }: { onClose: () => void }) {
   };
 
   const addStep = () => {
-    setProcessSteps((previous) => [...previous, { title: "", text: "" }]);
+    setProcessSteps((previous) => [
+      ...previous,
+      { title: "", text: "", icon: "sparkles" },
+    ]);
   };
 
   const removeStep = (index: number) => {
@@ -189,6 +174,34 @@ export function WelcomeAdmin({ onClose }: { onClose: () => void }) {
                     onChange={e => updateStep(index, "title", e.target.value)}
                     placeholder="Rubrik, t.ex. Hör av er"
                   />
+
+                  <div className="space-y-2">
+                    <label className="text-[8px] uppercase tracking-widest text-stone-400 font-bold">Ikon</label>
+                    <div className="flex flex-wrap gap-1.5">
+                      {PROCESS_ICON_OPTIONS.map((option) => {
+                        const Icon = option.icon;
+                        const isSelected = step.icon === option.value;
+
+                        return (
+                          <button
+                            key={option.value}
+                            type="button"
+                            onClick={() => updateStep(index, "icon", option.value)}
+                            aria-pressed={isSelected}
+                            aria-label={option.label}
+                            title={option.label}
+                            className={`flex h-8 w-8 items-center justify-center border transition-colors ${
+                              isSelected
+                                ? "border-stone-900 bg-stone-900 text-white"
+                                : "border-stone-200 bg-white text-stone-500 hover:border-stone-400 hover:text-stone-900"
+                            }`}
+                          >
+                            <Icon size={14} strokeWidth={1.5} />
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
 
                   <textarea
                     rows={3}

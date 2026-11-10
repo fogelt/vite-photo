@@ -3,6 +3,12 @@ import { useQuery } from "@tanstack/react-query";
 import { ArrowRight, Check, ChevronDown, Mail, Phone } from "lucide-react";
 import { fetchPhotosByTag, supabase } from "@/services";
 import { ImageContainer } from "@/components/ui";
+import {
+  DEFAULT_PROCESS_STEPS,
+  getProcessIcon,
+  normalizeProcessSteps,
+  type ProcessStep,
+} from "../process-icons";
 
 const CONTACT_EMAIL = "myelie@live.se";
 const CONTACT_PHONE = "+46 72 16 82 019";
@@ -12,44 +18,6 @@ const WELCOME_FALLBACK_TEXT =
   "Vad roligt att ni hittat hit! Jag heter Myelie och fotograferar bröllop med fokus på äkta känslor och de små ögonblicken som annars bara passerar. Bläddra runt bland bilderna nedan, lär känna mig lite bättre och kika på mina bröllopspaket — hör sedan gärna av er så berättar jag mer.";
 
 const PROCESS_FALLBACK_EYEBROW = "Så funkar det";
-
-interface ProcessStep {
-  title: string;
-  text: string;
-}
-
-const PROCESS_FALLBACK_STEPS: ProcessStep[] = [
-  {
-    title: "Hör av er",
-    text: "Berätta om datum, plats och vad ni drömmer om. Vi börjar med ett samtal där ni får ställa alla frågor.",
-  },
-  {
-    title: "Vi planerar tillsammans",
-    text: "Vi går igenom tider, platser och vilka ögonblick som är viktigast för er. Inga detaljer är för små.",
-  },
-  {
-    title: "Bröllopsdagen",
-    text: "Jag fotograferar närvarande och lugnt, med plats för både det stora och det lilla som händer runtomkring.",
-  },
-  {
-    title: "Bilderna",
-    text: "Ett genomtänkt urval av redigerade bilder levereras digitalt, redo att sparas och återvända till i många år.",
-  },
-];
-
-function normalizeProcessSteps(value: unknown): ProcessStep[] {
-  if (!Array.isArray(value)) return [];
-
-  return value
-    .filter((step): step is Record<string, unknown> =>
-      Boolean(step) && typeof step === "object"
-    )
-    .map((step) => ({
-      title: typeof step.title === "string" ? step.title : "",
-      text: typeof step.text === "string" ? step.text : "",
-    }))
-    .filter((step) => step.title.trim() !== "" || step.text.trim() !== "");
-}
 
 const ENGAGEMENT_FALLBACK_TITLE = "Innan den stora dagen";
 const ENGAGEMENT_FALLBACK_TEXT =
@@ -162,7 +130,7 @@ export function WeddingSitePreview({ items }: { items: any[] }) {
               <div className="md:w-[42%] md:flex-none">
                 <ProcessPreview
                   eyebrow={processEyebrow}
-                  steps={processSteps.length > 0 ? processSteps : PROCESS_FALLBACK_STEPS}
+                  steps={processSteps.length > 0 ? processSteps : DEFAULT_PROCESS_STEPS}
                 />
               </div>
             </div>
@@ -343,7 +311,7 @@ function WeddingHero({ photos }: { photos: PreviewPhoto[] }) {
         <div className="absolute inset-0" aria-hidden="true">
           <div className="flex h-full w-full gap-2">
             <HeroStrip photo={left} className="hidden h-full w-[22%] md:block" />
-            <HeroStrip photo={center} darkened className="h-full min-w-0 flex-1" />
+            <HeroStrip photo={center} className="h-full min-w-0 flex-1" />
             <HeroStrip photo={right} className="hidden h-full w-[22%] md:block" />
           </div>
         </div>
@@ -383,11 +351,9 @@ function WeddingHero({ photos }: { photos: PreviewPhoto[] }) {
 
 function HeroStrip({
   photo,
-  darkened = false,
   className = "",
 }: {
   photo?: PreviewPhoto;
-  darkened?: boolean;
   className?: string;
 }) {
   const [loaded, setLoaded] = useState(false);
@@ -405,12 +371,6 @@ function HeroStrip({
           loaded ? "scale-100 opacity-100" : "scale-[1.06] opacity-0"
         }`}
       />
-      {darkened && (
-        <div
-          className="absolute inset-0 bg-gradient-to-b from-black/25 via-black/15 to-black/30"
-          aria-hidden="true"
-        />
-      )}
     </div>
   );
 }
@@ -432,35 +392,44 @@ function ProcessPreview({
       </div>
 
       <div className="relative mt-8">
-        <div
-          className="absolute bottom-1 left-[6px] top-1 w-px bg-stone-900"
-          aria-hidden="true"
-        />
+        <ol className="space-y-5">
+          {steps.map((step, index) => {
+            const Icon = getProcessIcon(step.icon, index);
 
-        <ol className="space-y-7">
-          {steps.map((step, index) => (
-            <li key={`${index}-${step.title}`} className="relative pl-8">
-              <span
-                className="absolute left-0 top-1.5 flex h-3 w-3 items-center justify-center"
-                aria-hidden="true"
-              >
-                <span className="absolute inset-0 rotate-45 border border-stone-900 bg-stone-900" />
-                <Check size={7} strokeWidth={3} className="relative text-white" />
-              </span>
+            return (
+              <li key={`${index}-${step.title}`} className="relative pl-14">
+                {index < steps.length - 1 && (
+                  <span
+                    className="absolute -bottom-[42px] left-[15px] top-[22px] w-px bg-stone-900"
+                    aria-hidden="true"
+                  />
+                )}
+                <span
+                  className="absolute left-0 top-1.5 flex h-8 w-8 items-center justify-center rounded-full border border-stone-900 bg-stone-900 text-white"
+                  aria-hidden="true"
+                >
+                  <Icon size={15} strokeWidth={1.5} />
+                  <span className="absolute -bottom-1 -right-1 flex h-3.5 w-3.5 items-center justify-center rounded-full border border-stone-200 bg-white text-stone-900">
+                    <Check size={8} strokeWidth={3} />
+                  </span>
+                </span>
 
-              <span className="text-[9px] uppercase tracking-[0.3em] text-stone-900">
-                {String(index + 1).padStart(2, "0")}
-              </span>
+                <div className="rounded-sm bg-stone-200/40 p-4">
+                  <span className="text-[9px] uppercase tracking-[0.3em] text-stone-900">
+                    {String(index + 1).padStart(2, "0")}
+                  </span>
 
-              <h3 className="mt-1 text-base font-light leading-snug text-stone-900">
-                {step.title}
-              </h3>
+                  <h3 className="mt-1 text-base font-light leading-snug text-stone-900">
+                    {step.title}
+                  </h3>
 
-              <p className="mt-2 text-sm font-light leading-relaxed text-stone-600">
-                {step.text}
-              </p>
-            </li>
-          ))}
+                  <p className="mt-2 text-sm font-light leading-relaxed text-stone-600">
+                    {step.text}
+                  </p>
+                </div>
+              </li>
+            );
+          })}
         </ol>
       </div>
 

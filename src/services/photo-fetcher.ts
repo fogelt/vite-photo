@@ -85,6 +85,7 @@ export async function fetchPhotosByTag(tag: string | null) {
           url: cloudinaryImage(item.url),
           alt: photoAlt(tag),
           description: descriptionText,
+          mobileHero: Boolean(item.mobile_hero),
           photo_variants: item.photo_variants?.sort((a: any, b: any) => a.position - b.position) || []
         };
       }),
@@ -97,6 +98,7 @@ export async function fetchPhotosByTag(tag: string | null) {
           ),
           alt: photoAlt(tag),
           description: "",
+          mobileHero: false,
           photo_variants: []
         }))
     ];

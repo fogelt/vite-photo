@@ -59,7 +59,7 @@ function SortableVariant({ id, variant, onDelete }: { id: string; variant: any; 
 }
 
 // --- SUB-COMPONENTS ---
-function SortablePhoto({ photo, index, onDelete, onAddVariant, onDeleteVariant, onUpdateDescription, onReorderVariants }: {
+function SortablePhoto({ photo, index, onDelete, onAddVariant, onDeleteVariant, onUpdateDescription, onReorderVariants, showHeroToggle, isHero, onToggleHero }: {
   photo: any;
   index: number;
   onDelete: (id: string) => void;
@@ -67,6 +67,9 @@ function SortablePhoto({ photo, index, onDelete, onAddVariant, onDeleteVariant, 
   onDeleteVariant: (variantId: string) => void;
   onUpdateDescription: (id: string, text: string) => void;
   onReorderVariants: (photoId: string, oldIndex: number, newIndex: number) => void;
+  showHeroToggle: boolean;
+  isHero: boolean;
+  onToggleHero: (id: string) => void;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id: photo.id });
 
@@ -132,6 +135,21 @@ function SortablePhoto({ photo, index, onDelete, onAddVariant, onDeleteVariant, 
       </div>
 
       <div className="p-1.5 bg-white border-t border-stone-50">
+        {showHeroToggle && (
+          <button
+            type="button"
+            onClick={() => onToggleHero(photo.id)}
+            aria-pressed={isHero}
+            title="Visa i mobilens bildspel"
+            className={`mb-1 w-full px-1.5 py-1 text-[7px] font-bold uppercase tracking-wider transition-colors rounded-sm border ${
+              isHero
+                ? "border-stone-900 bg-stone-900 text-white"
+                : "border-stone-200 bg-white text-stone-400 hover:border-stone-400 hover:text-stone-700"
+            }`}
+          >
+            {isHero ? "★ Mobilbildspel" : "☆ Mobilbildspel"}
+          </button>
+        )}
         <textarea
           placeholder="Beskrivning..."
           className="w-full text-[8px] bg-stone-50/50 border border-stone-100 focus:border-stone-200 focus:ring-0 outline-none p-1 resize-none font-sans text-stone-600 leading-tight h-7 rounded-sm transition-colors placeholder:text-stone-300"
@@ -349,6 +367,12 @@ export function PhotoEditor({ tag }: { tag: string }) {
     setItems(prev => prev.map(item => item.id === id ? { ...item, description: text } : item));
   };
 
+  const handleToggleHero = (id: string) => {
+    setItems(prev => prev.map(item =>
+      item.id === id ? { ...item, mobileHero: !item.mobileHero } : item
+    ));
+  };
+
   const saveOrder = async () => {
     setIsSaving(true);
     try {
@@ -358,7 +382,8 @@ export function PhotoEditor({ tag }: { tag: string }) {
         id: item.id,
         tag: tag,
         position: index,
-        url: item.url
+        url: item.url,
+        mobile_hero: Boolean(item.mobileHero),
       }));
       await updatePhotoOrder(token, orderUpdates);
 
@@ -431,7 +456,7 @@ export function PhotoEditor({ tag }: { tag: string }) {
           disabled={isSaving || items.length === 0}
           className="bg-stone-900 text-white text-[10px] uppercase tracking-[0.2em] px-8 py-3 hover:bg-stone-800 disabled:opacity-50 transition-all font-bold shadow-md hover:shadow-lg active:scale-95"
         >
-          {isSaving ? "Sparar..." : "Spara layout"}
+          {isSaving ? "Sparar..." : tag === 'weddings_main' ? "Spara layout & bildspel" : "Spara layout"}
         </button>
       </div>
 
@@ -440,7 +465,15 @@ export function PhotoEditor({ tag }: { tag: string }) {
 
         {/* LEFT COL: Editor */}
         <div className="space-y-4">
-          <h3 className="text-[10px] font-bold uppercase tracking-widest text-stone-400">Redigeringsyta</h3>
+          <div className="flex flex-wrap items-baseline justify-between gap-2">
+            <h3 className="text-[10px] font-bold uppercase tracking-widest text-stone-400">Redigeringsyta</h3>
+            {tag === 'weddings_main' && (
+              <p className="text-[9px] uppercase tracking-widest text-stone-400">
+                Markera bilder till mobilens bildspel (helst vertikala) ·{" "}
+                {items.filter((item) => item.mobileHero).length} valda
+              </p>
+            )}
+          </div>
           <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
             <SortableContext items={items.map(i => i.id)} strategy={rectSortingStrategy}>
               <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3">
@@ -454,6 +487,9 @@ export function PhotoEditor({ tag }: { tag: string }) {
                     onDeleteVariant={handleDeleteVariant}
                     onUpdateDescription={handleDescriptionChange}
                     onReorderVariants={handleReorderVariants}
+                    showHeroToggle={tag === 'weddings_main'}
+                    isHero={Boolean(photo.mobileHero)}
+                    onToggleHero={handleToggleHero}
                   />
                 ))}
               </div>

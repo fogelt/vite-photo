@@ -93,7 +93,7 @@ export const deletePhoto = async (token: string, photoId: string) => {
 
 export const updatePhotoOrder = async (
   token: string,
-  photos: Array<{ id: string; tag: string; position: number; url: string }>
+  photos: Array<{ id: string; tag: string; position: number; url: string; mobile_hero?: boolean }>
 ) => {
   const client = createClerkSupabaseClient(token);
   const { error } = await client
