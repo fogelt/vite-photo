@@ -672,8 +672,8 @@ export function AdminLayout() {
 
         {site === 'wedding' && (
           <AdminCard
-            title="Välkomsttext"
-            description="Ändra rubrik och text på bröllopssajten"
+            title="Välkomsttext & process"
+            description="Ändra välkomsttext och stegen i Så funkar det"
             isActive={isWelcomeEditorOpen}
             onClick={() => {
               closeAllEditors();

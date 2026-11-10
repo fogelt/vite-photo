@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowRight, ChevronDown, Mail, Phone } from "lucide-react";
+import { ArrowRight, Check, ChevronDown, Mail, Phone } from "lucide-react";
 import { fetchPhotosByTag, supabase } from "@/services";
 import { ImageContainer } from "@/components/ui";
 
@@ -10,6 +10,46 @@ const CONTACT_PHONE = "+46 72 16 82 019";
 const WELCOME_FALLBACK_TITLE = "Välkomna hit";
 const WELCOME_FALLBACK_TEXT =
   "Vad roligt att ni hittat hit! Jag heter Myelie och fotograferar bröllop med fokus på äkta känslor och de små ögonblicken som annars bara passerar. Bläddra runt bland bilderna nedan, lär känna mig lite bättre och kika på mina bröllopspaket — hör sedan gärna av er så berättar jag mer.";
+
+const PROCESS_FALLBACK_EYEBROW = "Så funkar det";
+
+interface ProcessStep {
+  title: string;
+  text: string;
+}
+
+const PROCESS_FALLBACK_STEPS: ProcessStep[] = [
+  {
+    title: "Hör av er",
+    text: "Berätta om datum, plats och vad ni drömmer om. Vi börjar med ett samtal där ni får ställa alla frågor.",
+  },
+  {
+    title: "Vi planerar tillsammans",
+    text: "Vi går igenom tider, platser och vilka ögonblick som är viktigast för er. Inga detaljer är för små.",
+  },
+  {
+    title: "Bröllopsdagen",
+    text: "Jag fotograferar närvarande och lugnt, med plats för både det stora och det lilla som händer runtomkring.",
+  },
+  {
+    title: "Bilderna",
+    text: "Ett genomtänkt urval av redigerade bilder levereras digitalt, redo att sparas och återvända till i många år.",
+  },
+];
+
+function normalizeProcessSteps(value: unknown): ProcessStep[] {
+  if (!Array.isArray(value)) return [];
+
+  return value
+    .filter((step): step is Record<string, unknown> =>
+      Boolean(step) && typeof step === "object"
+    )
+    .map((step) => ({
+      title: typeof step.title === "string" ? step.title : "",
+      text: typeof step.text === "string" ? step.text : "",
+    }))
+    .filter((step) => step.title.trim() !== "" || step.text.trim() !== "");
+}
 
 const ENGAGEMENT_FALLBACK_TITLE = "Innan den stora dagen";
 const ENGAGEMENT_FALLBACK_TEXT =
@@ -60,6 +100,12 @@ export function WeddingSitePreview({ items }: { items: any[] }) {
     },
   });
 
+  const processSteps = normalizeProcessSteps(welcome?.process_steps);
+  const processEyebrow =
+    typeof welcome?.process_eyebrow === "string" && welcome.process_eyebrow.trim()
+      ? welcome.process_eyebrow
+      : PROCESS_FALLBACK_EYEBROW;
+
   const { data: engagement } = useQuery({
     queryKey: ["engagement_content"],
     queryFn: async () => {
@@ -89,23 +135,40 @@ export function WeddingSitePreview({ items }: { items: any[] }) {
     <div className="w-full bg-white">
       <WeddingHero photos={heroPhotos} />
 
-      {/* Välkommen: welcome text + the first eight photos */}
+      {/* Välkommen: welcome text + the process panel */}
       <div className="py-12 md:py-16">
-        <div className="mx-auto max-w-3xl px-6 text-center">
-          <div className="flex flex-col items-center gap-3 text-center">
-            <span className="text-[11px] uppercase tracking-[0.4em] text-stone-400">
+        <div className="mx-auto max-w-6xl px-6">
+          <div className="mx-auto flex max-w-3xl flex-col items-center text-center">
+            <span className="text-[11px] uppercase tracking-[0.45em] text-stone-400">
               Välkommen
             </span>
-            <h2 className="text-balance text-xl font-light leading-tight text-stone-900 md:text-2xl">
+            <h2 className="mt-4 text-balance text-xl font-light leading-tight text-stone-900 md:text-3xl">
               {welcome?.title || WELCOME_FALLBACK_TITLE}
             </h2>
+            <div className="mt-6 h-px w-16 bg-stone-300" aria-hidden="true" />
           </div>
 
-          <p className="mx-auto mt-6 max-w-2xl whitespace-pre-line text-[15px] font-light leading-relaxed text-stone-600 md:text-base">
-            {welcome?.text || WELCOME_FALLBACK_TEXT}
-          </p>
+          <div className="mt-10 border-y border-stone-200 py-8 md:mt-12 md:py-10">
+            <div className="flex flex-col gap-8 md:flex-row md:gap-12">
+              <p className="flex-1 whitespace-pre-line text-[15px] font-light leading-relaxed text-stone-900 first-letter:float-left first-letter:mr-3 first-letter:mt-1 first-letter:text-5xl first-letter:font-normal first-letter:leading-[0.78] md:text-base">
+                {welcome?.text || WELCOME_FALLBACK_TEXT}
+              </p>
 
-          <div className="mt-10 flex justify-center">
+              <div
+                className="hidden w-px self-stretch bg-stone-200 md:block"
+                aria-hidden="true"
+              />
+
+              <div className="md:w-[42%] md:flex-none">
+                <ProcessPreview
+                  eyebrow={processEyebrow}
+                  steps={processSteps.length > 0 ? processSteps : PROCESS_FALLBACK_STEPS}
+                />
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-8 flex justify-center">
             <div
               className="flex w-full max-w-[9rem] items-center justify-center gap-4"
               aria-hidden="true"
@@ -348,6 +411,63 @@ function HeroStrip({
           aria-hidden="true"
         />
       )}
+    </div>
+  );
+}
+
+function ProcessPreview({
+  eyebrow,
+  steps,
+}: {
+  eyebrow: string;
+  steps: ProcessStep[];
+}) {
+  return (
+    <div>
+      <div className="flex items-center gap-4">
+        <span className="text-[10px] uppercase tracking-[0.35em] text-stone-400">
+          {eyebrow}
+        </span>
+        <span className="h-px flex-1 bg-stone-200" aria-hidden="true" />
+      </div>
+
+      <div className="relative mt-8">
+        <div
+          className="absolute bottom-1 left-[6px] top-1 w-px bg-stone-900"
+          aria-hidden="true"
+        />
+
+        <ol className="space-y-7">
+          {steps.map((step, index) => (
+            <li key={`${index}-${step.title}`} className="relative pl-8">
+              <span
+                className="absolute left-0 top-1.5 flex h-3 w-3 items-center justify-center"
+                aria-hidden="true"
+              >
+                <span className="absolute inset-0 rotate-45 border border-stone-900 bg-stone-900" />
+                <Check size={7} strokeWidth={3} className="relative text-white" />
+              </span>
+
+              <span className="text-[9px] uppercase tracking-[0.3em] text-stone-900">
+                {String(index + 1).padStart(2, "0")}
+              </span>
+
+              <h3 className="mt-1 text-base font-light leading-snug text-stone-900">
+                {step.title}
+              </h3>
+
+              <p className="mt-2 text-sm font-light leading-relaxed text-stone-600">
+                {step.text}
+              </p>
+            </li>
+          ))}
+        </ol>
+      </div>
+
+      <span className="mt-8 inline-flex items-center gap-3 text-[10px] uppercase tracking-[0.28em] text-stone-900">
+        <span className="border-b border-stone-300 pb-1">Boka ett samtal</span>
+        <ArrowRight size={14} strokeWidth={1.5} />
+      </span>
     </div>
   );
 }
