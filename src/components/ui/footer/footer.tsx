@@ -90,15 +90,6 @@ export function Footer() {
             <span>Sverige</span>
           </div>
         </div>
-
-        <a
-          href="https://sign.myeliefoto.se/privacy.html"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-[10px] tracking-[0.2em] uppercase text-gray-400 font-light hover:text-black transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-black rounded-sm outline-none"
-        >
-          Integritetspolicy
-        </a>
       </div>
     </footer>
   );
