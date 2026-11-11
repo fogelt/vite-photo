@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowRight, Check, ChevronDown, Mail, Phone } from "lucide-react";
+import { ArrowRight, Check, ChevronDown, ChevronLeft, ChevronRight, Mail, Phone } from "lucide-react";
 import { fetchPhotosByTag, supabase } from "@/services";
 import { ImageContainer } from "@/components/ui";
 import {
@@ -163,13 +163,19 @@ export function WeddingSitePreview({ items }: { items: any[] }) {
             </h2>
           </div>
 
-          <div className="mt-10 grid grid-cols-1 items-stretch gap-6 md:mt-14 md:grid-cols-3 md:gap-8">
+          <div className="mt-8 flex items-center justify-center gap-3 text-stone-400 md:hidden">
+            <ChevronLeft size={14} strokeWidth={1.5} className="motion-safe:animate-[swipe-hint-left_1.6s_ease-in-out_infinite]" aria-hidden="true" />
+            <span className="text-[10px] uppercase tracking-[0.3em]">Svep för att se alla paket</span>
+            <ChevronRight size={14} strokeWidth={1.5} className="motion-safe:animate-[swipe-hint_1.6s_ease-in-out_infinite]" aria-hidden="true" />
+          </div>
+
+          <div className="-mx-6 mt-4 flex snap-x snap-mandatory scroll-px-[7.5%] items-stretch gap-4 overflow-x-auto px-[7.5%] pb-4 md:mx-0 md:mt-14 md:grid md:grid-cols-3 md:gap-8 md:overflow-visible md:px-0 md:pb-0">
             {packages?.map((pkg: any) => (
               <article
                 key={pkg.id}
-                className={`relative flex h-full flex-col border border-stone-200 p-8 transition-all duration-700 ${
+                className={`relative flex w-[85%] shrink-0 snap-center flex-col border border-stone-200 p-8 transition-all duration-700 md:w-auto ${
                   pkg.highlight
-                    ? "z-10 scale-[1.02] bg-stone-50/50 shadow-sm ring-1 ring-stone-200 md:scale-105"
+                    ? "z-10 bg-stone-50/50 shadow-sm ring-1 ring-stone-200 md:scale-105"
                     : "bg-white shadow-sm hover:shadow-md"
                 }`}
               >
@@ -201,21 +207,21 @@ export function WeddingSitePreview({ items }: { items: any[] }) {
                 </div>
               </article>
             ))}
+          </div>
 
-            {/* Helt skräddarsytt */}
-            <div className="flex h-full flex-col items-center justify-center border border-stone-200 bg-white p-8 text-center shadow-sm md:col-span-3 md:p-12">
-              <p className="text-[10px] font-semibold uppercase tracking-[0.3em] text-stone-400">
-                Helt skräddarsytt
-              </p>
-              <p className="mt-4 max-w-2xl text-[15px] font-light leading-relaxed text-stone-600 md:text-base">
-                Drömmer ni om något utöver paketen — fler timmar, flera dagar eller ett upplägg
-                helt i er stil? Berätta vad ni ser framför er, så bygger vi paketet tillsammans
-                från grunden.
-              </p>
-              <span className="mt-7 inline-flex items-center justify-center border border-stone-300 px-10 py-3.5 text-[10px] uppercase tracking-[0.3em] text-stone-800">
-                Berätta om era planer
-              </span>
-            </div>
+          {/* Helt skräddarsytt */}
+          <div className="mt-6 flex h-full flex-col items-center justify-center border border-stone-200 bg-white p-8 text-center shadow-sm md:mt-8 md:p-12">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.3em] text-stone-400">
+              Helt skräddarsytt
+            </p>
+            <p className="mt-4 max-w-2xl text-[15px] font-light leading-relaxed text-stone-600 md:text-base">
+              Drömmer ni om något utöver paketen — fler timmar, flera dagar eller ett upplägg
+              helt i er stil? Berätta vad ni ser framför er, så bygger vi paketet tillsammans
+              från grunden.
+            </p>
+            <span className="mt-7 inline-flex items-center justify-center border border-stone-300 px-10 py-3.5 text-[10px] uppercase tracking-[0.3em] text-stone-800">
+              Berätta om era planer
+            </span>
           </div>
         </div>
       </div>
@@ -319,24 +325,30 @@ function WeddingHero({ photos }: { photos: PreviewPhoto[] }) {
         <div className="absolute inset-0 bg-stone-900" aria-hidden="true" />
       )}
 
-      <div className="relative z-10 flex flex-col items-center px-6 text-center">
-        <span className="mb-7 text-[11px] uppercase tracking-[0.5em] text-white/80 [text-shadow:0_1px_2px_rgba(0,0,0,0.65),0_2px_18px_rgba(0,0,0,0.6)]">
-          Bröllopsfotograf · Skåne
-        </span>
+      <div className="pointer-events-none absolute inset-0 z-[5] bg-gradient-to-b from-black/45 via-transparent to-black/35" aria-hidden="true" />
 
-        <h1 className="text-3xl font-light uppercase leading-tight tracking-[0.2em] text-white [text-shadow:0_2px_4px_rgba(0,0,0,0.55),0_4px_32px_rgba(0,0,0,0.65)] sm:text-4xl sm:tracking-[0.25em] md:text-5xl">
-          Myelie Lendelund
-        </h1>
+      <div className="absolute inset-0 z-10 flex flex-col items-center justify-between px-6 pt-8 pb-12 text-center md:pt-12 md:pb-16">
+        <div className="flex flex-col items-center">
+          <span className="mb-5 text-[11px] uppercase tracking-[0.5em] text-white/80 [text-shadow:0_1px_2px_rgba(0,0,0,0.65),0_2px_18px_rgba(0,0,0,0.6)] md:mb-7">
+            Bröllopsfotograf · Skåne
+          </span>
 
-        <span className="my-7 h-px w-16 bg-white/40" aria-hidden="true" />
+          <h1 className="text-3xl font-light uppercase leading-tight tracking-[0.2em] text-white [text-shadow:0_2px_4px_rgba(0,0,0,0.55),0_4px_32px_rgba(0,0,0,0.65)] sm:text-4xl sm:tracking-[0.25em] md:text-5xl">
+            Myelie Lendelund
+          </h1>
 
-        <p className="mb-11 max-w-xl text-sm font-light italic leading-relaxed text-white/90 [text-shadow:0_1px_2px_rgba(0,0,0,0.65),0_2px_20px_rgba(0,0,0,0.6)] md:text-base">
-          Äkta ögonblick, varsamt bevarade
-        </p>
+          <span className="mt-5 h-px w-16 bg-white/40 md:mt-7" aria-hidden="true" />
+        </div>
 
-        <span className="w-full bg-white px-10 py-4 text-[11px] uppercase tracking-[0.28em] text-stone-900 sm:w-auto">
-          Se galleriet
-        </span>
+        <div className="flex flex-col items-center gap-5 md:gap-6">
+          <p className="max-w-xl text-sm font-light italic leading-relaxed text-white/90 [text-shadow:0_1px_2px_rgba(0,0,0,0.65),0_2px_20px_rgba(0,0,0,0.6)] md:text-base">
+            Äkta ögonblick, varsamt bevarade
+          </p>
+
+          <span className="w-full bg-white px-10 py-4 text-[11px] uppercase tracking-[0.28em] text-stone-900 sm:w-auto">
+            Se bilder
+          </span>
+        </div>
       </div>
 
       <span
