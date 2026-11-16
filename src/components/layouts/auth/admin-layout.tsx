@@ -33,29 +33,72 @@ type AppId = (typeof APP_RELEASES)[number]["id"];
 
 type AppDownload = { url: string; size: number; publishedAt: string | null };
 
-type ReleaseCache = AppDownload & { timestamp: number; etag: string | null };
+type ReleaseCache = AppDownload & {
+  timestamp: number;
+  etag: string | null;
+  /** Don't retry a failed lookup before this point. */
+  retryAt?: number | null;
+};
 
-// Avoid duplicate requests from mount/click/refresh happening back-to-back.
-const RELEASE_MIN_REFRESH_MS = 30 * 1000;
+// Unauthenticated GitHub API calls are capped at 60 requests per hour per IP,
+// and that budget is shared by every tab, reload and device behind the same
+// address. Releases change rarely, so keep a long-lived cache in localStorage
+// (shared across tabs, unlike sessionStorage) and let a normal admin session
+// cost two requests at most.
+const RELEASE_CACHE_PREFIX = "app-release-v4:";
+const RELEASE_CACHE_TTL_MS = 6 * 60 * 60 * 1000;
+const RELEASE_ERROR_BACKOFF_MS = 15 * 60 * 1000;
 
-async function resolveAppleSiliconDownload(repo: string): Promise<AppDownload> {
-  const cacheKey = `app-release-v3:${repo}`;
-  let cached: ReleaseCache | null = null;
+// Collapse concurrent lookups (StrictMode remounts, repeated clicks) into one.
+const inFlightRequests = new Map<string, Promise<AppDownload>>();
 
+function toDownload(cache: ReleaseCache): AppDownload {
+  return {
+    url: cache.url,
+    size: cache.size,
+    publishedAt: cache.publishedAt ?? null,
+  };
+}
+
+function readReleaseCache(cacheKey: string): ReleaseCache | null {
   try {
-    cached = JSON.parse(sessionStorage.getItem(cacheKey) ?? "null") as ReleaseCache | null;
-
-    if (cached && Date.now() - cached.timestamp < RELEASE_MIN_REFRESH_MS) {
-      return {
-        url: cached.url,
-        size: cached.size,
-        publishedAt: cached.publishedAt ?? null,
-      };
-    }
+    const parsed = JSON.parse(localStorage.getItem(cacheKey) ?? "null") as ReleaseCache | null;
+    return parsed && typeof parsed === "object" ? parsed : null;
   } catch {
     // Ignore malformed or unavailable storage.
+    return null;
+  }
+}
+
+function writeReleaseCache(cacheKey: string, value: ReleaseCache) {
+  try {
+    localStorage.setItem(cacheKey, JSON.stringify(value));
+  } catch {
+    // Ignore storage failures (e.g. private browsing).
+  }
+}
+
+// GitHub tells us exactly when the quota resets, so use that instead of
+// retrying blindly.
+function getRetryAt(response: Response): number {
+  const reset = Number(response.headers.get("x-ratelimit-reset"));
+  if (Number.isFinite(reset) && reset > 0) {
+    return reset * 1000;
   }
 
+  const retryAfter = Number(response.headers.get("retry-after"));
+  if (Number.isFinite(retryAfter) && retryAfter > 0) {
+    return Date.now() + retryAfter * 1000;
+  }
+
+  return Date.now() + RELEASE_ERROR_BACKOFF_MS;
+}
+
+async function fetchLatestDownload(
+  repo: string,
+  cacheKey: string,
+  cached: ReleaseCache | null,
+): Promise<AppDownload> {
   const headers: Record<string, string> = {
     Accept: "application/vnd.github+json",
   };
@@ -71,26 +114,36 @@ async function resolveAppleSiliconDownload(repo: string): Promise<AppDownload> {
   });
 
   if (response.status === 304 && cached) {
-    const download: AppDownload = {
-      url: cached.url,
-      size: cached.size,
-      publishedAt: cached.publishedAt ?? null,
-    };
-
-    try {
-      sessionStorage.setItem(
-        cacheKey,
-        JSON.stringify({ ...download, etag: cached.etag, timestamp: Date.now() }),
-      );
-    } catch {
-      // Ignore storage failures (e.g. private browsing).
-    }
+    const download = toDownload(cached);
+    writeReleaseCache(cacheKey, {
+      ...download,
+      etag: cached.etag,
+      timestamp: Date.now(),
+      retryAt: null,
+    });
 
     return download;
   }
 
   if (!response.ok) {
-    throw new Error("Kunde inte hämta senaste versionen från GitHub.");
+    // Remember the reset time so a rate-limited response isn't retried on
+    // every mount and visibility change. Keep the previous URL, if any.
+    writeReleaseCache(cacheKey, {
+      ...(cached ?? {
+        url: "",
+        size: 0,
+        publishedAt: null,
+        etag: null,
+        timestamp: Date.now(),
+      }),
+      retryAt: getRetryAt(response),
+    });
+
+    throw new Error(
+      response.status === 403
+        ? "GitHub begränsar antalet förfrågningar just nu. Försök igen senare."
+        : "Kunde inte hämta senaste versionen från GitHub.",
+    );
   }
 
   const release = (await response.json()) as {
@@ -115,20 +168,42 @@ async function resolveAppleSiliconDownload(repo: string): Promise<AppDownload> {
     publishedAt: typeof release.published_at === "string" ? release.published_at : null,
   };
 
-  try {
-    sessionStorage.setItem(
-      cacheKey,
-      JSON.stringify({
-        ...download,
-        etag: response.headers.get("etag"),
-        timestamp: Date.now(),
-      }),
-    );
-  } catch {
-    // Ignore storage failures (e.g. private browsing).
-  }
+  writeReleaseCache(cacheKey, {
+    ...download,
+    etag: response.headers.get("etag"),
+    timestamp: Date.now(),
+    retryAt: null,
+  });
 
   return download;
+}
+
+async function resolveAppleSiliconDownload(repo: string): Promise<AppDownload> {
+  const cacheKey = `${RELEASE_CACHE_PREFIX}${repo}`;
+  const cached = readReleaseCache(cacheKey);
+  const now = Date.now();
+
+  if (cached) {
+    if (cached.url && now - cached.timestamp < RELEASE_CACHE_TTL_MS) {
+      return toDownload(cached);
+    }
+
+    const isBackingOff = typeof cached.retryAt === "number" && now < cached.retryAt;
+    if (isBackingOff) {
+      if (cached.url) return toDownload(cached);
+      throw new Error("GitHub begränsar antalet förfrågningar just nu. Försök igen senare.");
+    }
+  }
+
+  const pending = inFlightRequests.get(cacheKey);
+  if (pending) return pending;
+
+  const request = fetchLatestDownload(repo, cacheKey, cached).finally(() => {
+    inFlightRequests.delete(cacheKey);
+  });
+
+  inFlightRequests.set(cacheKey, request);
+  return request;
 }
 
 // The download itself happens in the browser, outside of our control, so use the
@@ -223,7 +298,7 @@ export function AdminLayout() {
 
   // Resolve the latest DMG URLs up front so a normal click can start the
   // download immediately (Safari is strict about downloads from async code).
-  // Keep them fresh so a newly published release shows up without a reload.
+  // The download URL is cached for hours, so refreshing here is normally free.
   useEffect(() => {
     let cancelled = false;
 
@@ -246,13 +321,10 @@ export function AdminLayout() {
     };
 
     refresh();
-
-    const interval = window.setInterval(refresh, 60_000);
     document.addEventListener("visibilitychange", refreshWhenVisible);
 
     return () => {
       cancelled = true;
-      window.clearInterval(interval);
       document.removeEventListener("visibilitychange", refreshWhenVisible);
     };
   }, []);
