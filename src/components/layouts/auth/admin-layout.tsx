@@ -510,12 +510,12 @@ export function AdminLayout() {
                 <HeartHandshake size={22} />
               </div>
               <div className="flex-1">
-                <h3 className="text-xs uppercase tracking-widest font-bold">Bröllopsplanering</h3>
+                <h3 className="text-xs uppercase tracking-widest font-bold">Kundplanering</h3>
                 <p className="text-[9px] text-stone-400 uppercase tracking-widest mt-1 font-bold">
                   Kunder, samtal, bilder och kalender
                 </p>
                 <p className="mt-3 max-w-2xl text-xs font-light leading-relaxed text-stone-500">
-                  Skriv ner vad ni pratade om, spara ett foto på paret och se alla vigslar i en visuell kalender.
+                  Skriv ner vad ni pratade om, spara ett foto på kunden och se bröllop, privata och företagsuppdrag i en visuell kalender.
                 </p>
               </div>
               <div className="flex items-center gap-2 text-[9px] uppercase tracking-widest font-bold text-stone-900">
@@ -536,7 +536,7 @@ export function AdminLayout() {
                 <FileSignature size={22} />
               </div>
               <div className="flex-1">
-                <h3 className="text-xs uppercase tracking-widest font-bold">Bröllopskontrakt</h3>
+                <h3 className="text-xs uppercase tracking-widest font-bold">Kontrakt</h3>
                 <p className="text-[9px] text-stone-400 uppercase tracking-widest mt-1 font-bold">
                   Skapa, signera och kontrasignera avtal
                 </p>

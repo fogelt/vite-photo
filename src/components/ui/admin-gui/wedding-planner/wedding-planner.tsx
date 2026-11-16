@@ -28,8 +28,12 @@ import { uploadToCloudinary } from "../photo-editor/api/photo-actions";
 
 type ClientStatus = "lead" | "contacted" | "meeting" | "booked" | "completed" | "declined";
 
+/** Kind of booking. Mirrors `ContractKind` in the contract signer (sign.myeliefoto.se). */
+type ClientKind = "wedding" | "private" | "business";
+
 interface WeddingClient {
   id: string;
+  kind: ClientKind | null;
   couple_names: string;
   contact_person: string | null;
   email: string | null;
@@ -48,6 +52,7 @@ interface WeddingClient {
 }
 
 interface ClientDraft {
+  kind: ClientKind;
   couple_names: string;
   contact_person: string;
   email: string;
@@ -74,7 +79,65 @@ const STATUS_META: Record<ClientStatus, { label: string; badge: string; dot: str
   declined: { label: "Avböjd", badge: "border-rose-200 bg-rose-50 text-rose-700", dot: "bg-rose-400" },
 };
 
-const WEEKDAYS = ["Mån", "Tis", "Ons", "Tor", "Fre", "Lör", "Sön"];
+const KINDS: ClientKind[] = ["wedding", "private", "business"];
+
+const KIND_META: Record<
+  ClientKind,
+  {
+    label: string;
+    badge: string;
+    party: string;
+    nameLabel: string;
+    namePlaceholder: string;
+    nameRequired: string;
+    event: string;
+    dateLabel: string;
+    photoLabel: string;
+    photoHint: string;
+  }
+> = {
+  wedding: {
+    label: "Bröllop",
+    badge: "border-rose-100 bg-rose-50 text-rose-700",
+    party: "Paret",
+    nameLabel: "Parets namn *",
+    namePlaceholder: "t.ex. Anna & Erik",
+    nameRequired: "Ange parets namn.",
+    event: "Bröllopet",
+    dateLabel: "Bröllopsdatum",
+    photoLabel: "Bild på paret",
+    photoHint: "Ett foto hjälper dig minnas paret",
+  },
+  private: {
+    label: "Privat",
+    badge: "border-sky-100 bg-sky-50 text-sky-700",
+    party: "Kunden",
+    nameLabel: "Kundens namn *",
+    namePlaceholder: "t.ex. Familjen Andersson",
+    nameRequired: "Ange kundens namn.",
+    event: "Fotograferingen",
+    dateLabel: "Datum",
+    photoLabel: "Bild på kunden",
+    photoHint: "Ett foto hjälper dig minnas kunden",
+  },
+  business: {
+    label: "Företag",
+    badge: "border-stone-200 bg-stone-100 text-stone-700",
+    party: "Företaget",
+    nameLabel: "Företagets namn *",
+    namePlaceholder: "t.ex. Café Lyktan AB",
+    nameRequired: "Ange företagets namn.",
+    event: "Uppdraget",
+    dateLabel: "Datum",
+    photoLabel: "Bild eller logotyp",
+    photoHint: "En bild hjälper dig minnas kunden",
+  },
+};
+
+/** Rows written before the `kind` column existed have no value and are weddings. */
+const kindOf = (client: WeddingClient): ClientKind => client.kind ?? "wedding";
+
+const WEEKDAYS =["Mån", "Tis", "Ons", "Tor", "Fre", "Lör", "Sön"];
 
 const monthFormatter = new Intl.DateTimeFormat("sv-SE", { month: "long", year: "numeric" });
 const longDateFormatter = new Intl.DateTimeFormat("sv-SE", {
@@ -131,6 +194,7 @@ const emptyToNull = (value: string) => {
 };
 
 const toDraft = (client: WeddingClient | null, fallbackDate?: string): ClientDraft => ({
+  kind: client ? kindOf(client) : "wedding",
   couple_names: client?.couple_names ?? "",
   contact_person: client?.contact_person ?? "",
   email: client?.email ?? "",
@@ -159,6 +223,7 @@ export function WeddingPlanner({ onClose }: { onClose: () => void }) {
   const [removeTarget, setRemoveTarget] = useState<WeddingClient | null>(null);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<"all" | ClientStatus>("all");
+  const [kindFilter, setKindFilter] = useState<"all" | ClientKind>("all");
   const [actionError, setActionError] = useState<string | null>(null);
 
   const getAuth = async () => {
@@ -187,6 +252,7 @@ export function WeddingPlanner({ onClose }: { onClose: () => void }) {
   const saveClient = async (draft: ClientDraft, id?: string) => {
     const { client } = await getAuth();
     const payload = {
+      kind: draft.kind,
       couple_names: draft.couple_names.trim(),
       contact_person: emptyToNull(draft.contact_person),
       email: emptyToNull(draft.email),
@@ -269,12 +335,13 @@ export function WeddingPlanner({ onClose }: { onClose: () => void }) {
     const query = search.trim().toLowerCase();
     return clients.filter((client) => {
       if (statusFilter !== "all" && client.status !== statusFilter) return false;
+      if (kindFilter !== "all" && kindOf(client) !== kindFilter) return false;
       if (!query) return true;
       return [client.couple_names, client.contact_person, client.venue, client.email, client.phone, client.notes, client.package]
         .filter(Boolean)
         .some((value) => value!.toLowerCase().includes(query));
     });
-  }, [clients, search, statusFilter]);
+  }, [clients, search, statusFilter, kindFilter]);
 
   const cells = useMemo(() => {
     const monthStart = new Date(cursor.getFullYear(), cursor.getMonth(), 1);
@@ -288,7 +355,7 @@ export function WeddingPlanner({ onClose }: { onClose: () => void }) {
 
   const monthKey = `${cursor.getFullYear()}-${pad(cursor.getMonth() + 1)}`;
   const bookedCount = clients.filter((client) => client.status === "booked").length;
-  const monthWeddings = clients.filter(
+  const monthBookings = clients.filter(
     (client) => client.wedding_date?.startsWith(monthKey) && client.status !== "declined"
   ).length;
 
@@ -327,7 +394,7 @@ export function WeddingPlanner({ onClose }: { onClose: () => void }) {
       <div className="fixed inset-0 z-[100] flex items-center justify-center bg-stone-50">
         <div className="flex items-center gap-3 text-[10px] uppercase tracking-widest text-stone-400">
           <Loader2 size={16} className="animate-spin" />
-          Hämtar bröllopskunder...
+          Hämtar kunder...
         </div>
       </div>
     );
@@ -342,9 +409,9 @@ export function WeddingPlanner({ onClose }: { onClose: () => void }) {
               <HeartHandshake size={22} />
             </div>
             <div>
-              <h2 className="text-xl font-light uppercase tracking-[0.3em] text-stone-900">Bröllopsplanering</h2>
+              <h2 className="text-xl font-light uppercase tracking-[0.3em] text-stone-900">Kundplanering</h2>
               <p className="mt-1 text-[10px] font-bold uppercase tracking-widest text-stone-400">
-                Kunder, samtal och vigslar — bara för dig
+                Kunder, samtal och uppdrag — bara för dig
               </p>
             </div>
           </div>
@@ -375,8 +442,8 @@ export function WeddingPlanner({ onClose }: { onClose: () => void }) {
             icon={<HeartHandshake size={16} className="text-emerald-600" />}
           />
           <StatCard
-            label="Vigslar denna månad"
-            value={monthWeddings}
+            label="Uppdrag denna månad"
+            value={monthBookings}
             icon={<CalendarDays size={16} className="text-sky-600" />}
           />
           <StatCard
@@ -560,7 +627,7 @@ export function WeddingPlanner({ onClose }: { onClose: () => void }) {
               <div className="mb-4 flex items-center justify-between">
                 <h3 className="flex items-center gap-2 text-[9px] font-bold uppercase tracking-widest text-stone-900">
                   <CalendarDays size={13} className="text-stone-400" />
-                  Kommande vigslar
+                  Kommande uppdrag
                 </h3>
                 <span className="text-[9px] font-bold text-stone-300">{upcoming.length}</span>
               </div>
@@ -568,7 +635,7 @@ export function WeddingPlanner({ onClose }: { onClose: () => void }) {
               <div className="space-y-2">
                 {upcoming.length === 0 ? (
                   <p className="border border-dashed border-stone-100 px-3 py-5 text-center text-[9px] uppercase tracking-wide text-stone-300">
-                    Inga kommande vigslar
+                    Inga kommande uppdrag
                   </p>
                 ) : (
                   upcoming.map((client) => {
@@ -686,6 +753,21 @@ export function WeddingPlanner({ onClose }: { onClose: () => void }) {
             })}
           </div>
 
+          <div className="mt-2 flex flex-wrap gap-2">
+            <FilterPill active={kindFilter === "all"} onClick={() => setKindFilter("all")}>
+              Alla typer
+            </FilterPill>
+            {KINDS.map((kind) => {
+              const count = clients.filter((client) => kindOf(client) === kind).length;
+              return (
+                <FilterPill key={kind} active={kindFilter === kind} onClick={() => setKindFilter(kind)}>
+                  {KIND_META[kind].label}
+                  <span className="ml-1 text-[8px] opacity-60">{count}</span>
+                </FilterPill>
+              );
+            })}
+          </div>
+
           {filtered.length === 0 ? (
             <div className="mt-6 border border-dashed border-stone-200 bg-white px-6 py-16 text-center">
               <HeartHandshake size={26} className="mx-auto text-stone-200" />
@@ -694,7 +776,7 @@ export function WeddingPlanner({ onClose }: { onClose: () => void }) {
               </p>
               <p className="mt-2 text-xs font-light text-stone-400">
                 {clients.length === 0
-                  ? "Lägg till den första kunden och börja bygga din bröllopskalender."
+                  ? "Lägg till den första kunden och börja bygga din kalender."
                   : "Prova ett annat filter eller en annan sökning."}
               </p>
             </div>
@@ -799,6 +881,7 @@ function ClientCard({
   onDelete: () => void;
 }) {
   const meta = STATUS_META[client.status];
+  const kindMeta = KIND_META[kindOf(client)];
   const overdue = client.follow_up_date ? client.follow_up_date < today : false;
 
   return (
@@ -825,12 +908,19 @@ function ClientCard({
               </p>
             )}
           </div>
-          <span
-            className={`inline-flex shrink-0 items-center gap-1 border px-1.5 py-0.5 text-[7px] font-bold uppercase tracking-wide ${meta.badge}`}
-          >
-            <span className={`h-1 w-1 rounded-full ${meta.dot}`} />
-            {meta.label}
-          </span>
+          <div className="flex shrink-0 flex-col items-end gap-1">
+            <span
+              className={`inline-flex items-center gap-1 border px-1.5 py-0.5 text-[7px] font-bold uppercase tracking-wide ${meta.badge}`}
+            >
+              <span className={`h-1 w-1 rounded-full ${meta.dot}`} />
+              {meta.label}
+            </span>
+            <span
+              className={`inline-flex items-center border px-1.5 py-0.5 text-[7px] font-bold uppercase tracking-wide ${kindMeta.badge}`}
+            >
+              {kindMeta.label}
+            </span>
+          </div>
         </div>
 
         <div className="mt-2 space-y-1 text-[9px] text-stone-500">
@@ -941,6 +1031,7 @@ function ClientEditor({
   };
 
   const update = (patch: Partial<ClientDraft>) => setDraft((previous) => ({ ...previous, ...patch }));
+  const kindMeta = KIND_META[draft.kind];
 
   const handleUpload = async (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -967,7 +1058,7 @@ function ClientEditor({
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault();
     if (!draft.couple_names.trim()) {
-      setError("Ange parets namn.");
+      setError(kindMeta.nameRequired);
       return;
     }
 
@@ -1123,7 +1214,7 @@ function ClientEditor({
                 {isNew ? "Ny kund" : "Redigera kund"}
               </h3>
               <p className="mt-1 text-[9px] font-bold uppercase tracking-widest text-stone-400">
-                {isNew ? "Lägg till i din bröllopskalender" : "Uppdatera anteckningar och detaljer"}
+                {isNew ? "Lägg till i din kalender" : "Uppdatera anteckningar och detaljer"}
               </p>
             </div>
             <button
@@ -1159,7 +1250,7 @@ function ClientEditor({
                   </h4>
                   <p className="mt-1 text-xs font-light leading-relaxed text-stone-500">
                     {isRecording
-                      ? "Berätta om paret och deras stora dag. Miso lyssnar!"
+                      ? "Berätta om kunden och uppdraget. Miso lyssnar!"
                       : isProcessingVoice
                         ? "Jag sorterar informationen och fyller i formuläret åt dig."
                         : "Berätta lite om dina kunder så hjälper Miso dig att fylla i uppgifterna."}
@@ -1206,7 +1297,7 @@ function ClientEditor({
               <div className="mt-3 border-t border-stone-200/70 px-1 pt-3">
                 <p className="text-center text-[10px] font-light text-stone-400 sm:text-left">
                   Tips: Du kan prata helt naturligt på svenska. Miso plockar upp namn,
-                  datum, kontaktuppgifter och bröllopsdetaljer.
+                  datum, kontaktuppgifter och detaljer om uppdraget.
                 </p>
               </div>
             </div>
@@ -1214,7 +1305,7 @@ function ClientEditor({
             <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
               <div className="space-y-5">
                 <div>
-                  <p className="mb-2 text-[9px] font-bold uppercase tracking-widest text-stone-400">Bild på paret</p>
+                  <p className="mb-2 text-[9px] font-bold uppercase tracking-widest text-stone-400">{kindMeta.photoLabel}</p>
                   <label
                     className={`group relative block aspect-[4/5] w-full cursor-pointer overflow-hidden border-2 border-dashed transition-colors ${draft.couple_photo_url
                       ? "border-transparent"
@@ -1230,7 +1321,7 @@ function ClientEditor({
                     />
                     {draft.couple_photo_url ? (
                       <>
-                        <img src={draft.couple_photo_url} alt="Paret" className="h-full w-full object-cover" />
+                        <img src={draft.couple_photo_url} alt={kindMeta.party}className="h-full w-full object-cover" />
                         <span className="absolute inset-0 flex items-center justify-center gap-2 bg-stone-900/55 text-[9px] font-bold uppercase tracking-widest text-white opacity-0 transition-opacity group-hover:opacity-100">
                           {uploading ? <Loader2 size={16} className="animate-spin" /> : <ImagePlus size={16} />}
                           {uploading ? "Laddar upp..." : "Byt bild"}
@@ -1243,7 +1334,7 @@ function ClientEditor({
                           {uploading ? "Laddar upp..." : "Ladda upp bild"}
                         </span>
                         <span className="text-[10px] font-light normal-case text-stone-400">
-                          Ett foto hjälper dig minnas paret
+                          {kindMeta.photoHint}
                         </span>
                       </span>
                     )}
@@ -1287,20 +1378,44 @@ function ClientEditor({
               </div>
 
               <div className="space-y-7 lg:col-span-2">
+                <div className="space-y-2">
+                  <p className="text-[9px] font-bold uppercase tracking-widest text-stone-400">Typ av uppdrag</p>
+                  <div className="grid grid-cols-3 gap-2" role="radiogroup" aria-label="Typ av uppdrag">
+                    {KINDS.map((kind) => {
+                      const active = draft.kind === kind;
+                      return (
+                        <button
+                          key={kind}
+                          type="button"
+                          role="radio"
+                          aria-checked={active}
+                          onClick={() => update({ kind })}
+                          className={`border px-3 py-2 text-[9px] font-bold uppercase tracking-widest transition-colors ${active
+                            ? "border-stone-900 bg-stone-900 text-white"
+                            : "border-stone-200 text-stone-400 hover:border-stone-400 hover:text-stone-900"
+                            }`}
+                        >
+                          {KIND_META[kind].label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
                 <div className="space-y-4">
                   <p className="border-l-2 border-stone-900 pl-3 text-[10px] font-bold uppercase tracking-[0.2em] text-stone-900">
-                    Paret
+                    {kindMeta.party}
                   </p>
                   <div className="space-y-1.5">
                     <label className="block text-[9px] font-bold uppercase tracking-widest text-stone-400">
-                      Parets namn *
+                      {kindMeta.nameLabel}
                     </label>
                     <input
                       autoFocus
                       required
                       value={draft.couple_names}
                       onChange={(event) => update({ couple_names: event.target.value })}
-                      placeholder="t.ex. Anna & Erik"
+                      placeholder={kindMeta.namePlaceholder}
                       className="w-full border-b-2 border-stone-200 bg-transparent pb-2 text-xl font-light text-stone-900 outline-none transition-colors focus:border-stone-900"
                     />
                   </div>
@@ -1330,11 +1445,11 @@ function ClientEditor({
 
                 <div className="space-y-4 border-t border-stone-100 pt-6">
                   <p className="border-l-2 border-stone-900 pl-3 text-[10px] font-bold uppercase tracking-[0.2em] text-stone-900">
-                    Bröllopet
+                    {kindMeta.event}
                   </p>
                   <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                     <TextField
-                      label="Bröllopsdatum"
+                      label={kindMeta.dateLabel}
                       type="date"
                       value={draft.wedding_date}
                       onChange={(value) => update({ wedding_date: value })}
