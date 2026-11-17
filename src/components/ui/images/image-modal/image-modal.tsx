@@ -1,5 +1,16 @@
 import { useCallback, useEffect, useState } from 'react';
-import { cloudinaryImage, preloadImage, VARIANT_THUMB_WIDTH } from '@/utils';
+import {
+  canPreloadImages,
+  cloudinaryImage,
+  isImageLoaded,
+  modalImageSrc,
+  modalPreviewSrc,
+  preloadModalImage,
+  preloadModalPreview,
+  rememberLoadedImage,
+  VARIANT_THUMB_WIDTH,
+  whenIdle,
+} from '@/utils';
 import { useImageLoaded } from '@/utils/use-image-loaded';
 
 interface PhotoVariant {
@@ -33,14 +44,31 @@ interface ImageModalProps {
   preview?: ImagePreview | null;
 }
 
-/** Width of the sharp image in the large view. */
-const MODAL_IMAGE_WIDTH = 2000;
-
 /** Larger stand-in for the main view when a variant is picked. */
 const VARIANT_PREVIEW_WIDTH = 600;
 
-function preloadVariant(url: string) {
-  preloadImage(cloudinaryImage(url, { width: MODAL_IMAGE_WIDTH }));
+/**
+ * Photos warmed around the current one, nearest first: next, previous, then
+ * the one after next (forward browsing is the common direction).
+ */
+const NEIGHBOUR_OFFSETS = [1, -1, 2];
+
+/**
+ * Photos whose mid-size preview is warmed as soon as a photo is shown. These
+ * are cheap, so the window reaches further ahead: when clicking through fast,
+ * the photos coming up are already on their way.
+ */
+const PREVIEW_OFFSETS = [1, 2, 3, -1, -2];
+
+/**
+ * How long a photo must stay on screen before its sharp image is requested.
+ * Skipping past photos then costs only their small previews, leaving the
+ * bandwidth for the one the visitor stops on. Cached images skip the wait.
+ */
+const SHARP_SETTLE_DELAY = 150;
+
+function wrapIndex(index: number, length: number) {
+  return ((index % length) + length) % length;
 }
 
 /**
@@ -63,24 +91,60 @@ const ImageModalContent = ({
   const [activeVariant, setActiveVariant] = useState<string | null>(null);
 
   const displayUrl = activeVariant ?? currentPhoto.url;
-  const sharpSrc = cloudinaryImage(displayUrl, { width: MODAL_IMAGE_WIDTH });
-  const sharp = useImageLoaded(sharpSrc);
+  const sharpSrc = modalImageSrc(displayUrl);
+
+  // The photo the modal opened on loads right away; after that, a new sharp
+  // image is only requested once the visitor pauses on it.
+  const [settledSrc, setSettledSrc] = useState(sharpSrc);
+  useEffect(() => {
+    if (settledSrc === sharpSrc) return;
+    const timer = window.setTimeout(() => setSettledSrc(sharpSrc), SHARP_SETTLE_DELAY);
+    return () => window.clearTimeout(timer);
+  }, [sharpSrc, settledSrc]);
+
+  const showSharp = settledSrc === sharpSrc || isImageLoaded(sharpSrc);
+  const sharp = useImageLoaded(showSharp ? sharpSrc : '');
+
+  // Warm the cheap previews around the current photo straight away.
+  useEffect(() => {
+    if (photos.length < 2) return;
+    for (const offset of PREVIEW_OFFSETS) {
+      const index = wrapIndex(currentIndex + offset, photos.length);
+      if (index !== currentIndex) preloadModalPreview(photos[index].url);
+    }
+  }, [currentIndex, photos]);
 
   // Variant images are small, and warming them early is what makes browsing
   // alternatives instant. Start right away rather than waiting for the main
-  // image, but skip it for visitors who explicitly asked to save data.
+  // image, but skip it for visitors who asked to save data.
   useEffect(() => {
-    const connection = (navigator as unknown as { connection?: { saveData?: boolean } }).connection;
-    if (connection?.saveData) return;
+    if (!canPreloadImages()) return;
 
     const timer = window.setTimeout(() => {
       for (const variant of currentPhoto.photo_variants || []) {
-        preloadVariant(variant.url);
+        preloadModalImage(variant.url);
       }
     }, 150);
 
     return () => window.clearTimeout(timer);
   }, [currentPhoto]);
+
+  // Once the current photo is sharp, warm its neighbours so the arrow keys
+  // (and the on-screen arrows) open the next photo instantly. Waiting for the
+  // current image keeps these from competing with it for bandwidth.
+  useEffect(() => {
+    if (!sharp.loaded || photos.length < 2) return;
+
+    return whenIdle(() => {
+      const seen = new Set([currentIndex]);
+      for (const offset of NEIGHBOUR_OFFSETS) {
+        const index = wrapIndex(currentIndex + offset, photos.length);
+        if (seen.has(index)) continue;
+        seen.add(index);
+        preloadModalImage(photos[index].url);
+      }
+    });
+  }, [sharp.loaded, currentIndex, photos]);
 
   // A new photo always starts on its main image.
   useEffect(() => {
@@ -119,8 +183,9 @@ const ImageModalContent = ({
       ? preview.src
       : null;
 
-  // Tiny blur fallback, e.g. after navigating with the arrow keys.
-  const placeholderSrc = instantSrc ?? cloudinaryImage(displayUrl, { blur: true });
+  // Otherwise (e.g. after navigating with the arrows) the mid-size preview,
+  // which is usually already warmed by the window above.
+  const placeholderSrc = instantSrc ?? modalPreviewSrc(displayUrl);
 
   return (
     <div className="fixed inset-0 z-[100] flex flex-col bg-black/95 transition-all duration-300">
@@ -162,9 +227,9 @@ const ImageModalContent = ({
                   <button
                     key={img.id}
                     onClick={() => setActiveVariant(img.url === currentPhoto.url ? null : img.url)}
-                    onPointerEnter={() => preloadVariant(img.url)}
-                    onFocus={() => preloadVariant(img.url)}
-                    onPointerDown={() => preloadVariant(img.url)}
+                    onPointerEnter={() => preloadModalImage(img.url)}
+                    onFocus={() => preloadModalImage(img.url)}
+                    onPointerDown={() => preloadModalImage(img.url)}
                     aria-label="Visa variant"
                     className="transition-transform active:scale-95"
                   >
@@ -199,19 +264,24 @@ const ImageModalContent = ({
               aria-hidden="true"
               className="h-full w-auto max-w-full object-contain drop-shadow-2xl"
             />
-            <img
-              ref={sharp.ref}
-              src={sharpSrc}
-              alt={currentPhoto.alt || ''}
-              loading="eager"
-              decoding="async"
-              fetchPriority="high"
-              onLoad={sharp.onLoad}
-              onError={sharp.onError}
-              className={`absolute inset-0 h-full w-full object-contain drop-shadow-2xl transition-opacity duration-300 ${
-                sharp.loaded ? 'opacity-100' : 'opacity-0'
-              }`}
-            />
+            {showSharp && (
+              <img
+                ref={sharp.ref}
+                src={sharpSrc}
+                alt={currentPhoto.alt || ''}
+                loading="eager"
+                decoding="async"
+                fetchPriority="high"
+                onLoad={() => {
+                  rememberLoadedImage(sharpSrc);
+                  sharp.onLoad();
+                }}
+                onError={sharp.onError}
+                className={`absolute inset-0 h-full w-full object-contain drop-shadow-2xl transition-opacity duration-300 ${
+                  sharp.loaded ? 'opacity-100' : 'opacity-0'
+                }`}
+              />
+            )}
           </div>
         </div>
 

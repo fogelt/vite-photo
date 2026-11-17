@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { cloudinarySrcSet } from '@/utils/cloudinary';
+import { cloudinaryImage, cloudinarySrcSet, GRID_DESKTOP_WIDTH } from '@/utils/cloudinary';
 import { useImageLoaded } from '@/utils/use-image-loaded';
 
 interface ImageCardProps {
@@ -19,6 +19,13 @@ interface ImageCardProps {
   priority?: boolean;
   /** Stagger the fade-in by this many milliseconds. */
   revealDelay?: number;
+  /**
+   * The photo's pixel size. Set as the <img> width/height so the browser
+   * reserves the tile's final space before the file arrives, instead of the
+   * layout collapsing and jumping when it loads.
+   */
+  width?: number;
+  height?: number;
 }
 
 const DEFAULT_IMG_CLASS =
@@ -28,7 +35,7 @@ const REVEAL_DURATION = 700;
 const MOBILE_MEDIA_QUERY = '(max-width: 767px)';
 
 /**
- * Desktop photos are judged on sharpness, so the grid loads the high-resolution
+ * Desktop photos are judged on sharpness, so the grid loads a high-resolution
  * source there. Mobile keeps the responsive `srcset` to save data.
  */
 function useIsMobile() {
@@ -62,6 +69,8 @@ export function ImageCard({
   widths,
   priority = false,
   revealDelay = 0,
+  width,
+  height,
 }: ImageCardProps) {
   const image = useImageLoaded(url);
   const isMobile = useIsMobile();
@@ -132,9 +141,11 @@ export function ImageCard({
 
       <img
         ref={image.ref}
-        src={url}
+        src={cloudinaryImage(url, { width: GRID_DESKTOP_WIDTH })}
         srcSet={srcSet}
         sizes={srcSet ? sizes : undefined}
+        width={width}
+        height={height}
         alt={alt || "Fotografi Myelie Lendelund"}
         loading={priority ? 'eager' : 'lazy'}
         decoding="async"

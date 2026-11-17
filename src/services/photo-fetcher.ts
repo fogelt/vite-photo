@@ -17,6 +17,8 @@ function photoAlt(tag: string) {
 interface CloudinaryResource {
   public_id: string;
   format: string;
+  width?: number;
+  height?: number;
   [key: string]: any;
 }
 
@@ -68,6 +70,11 @@ export async function fetchPhotosByTag(tag: string | null) {
 
     const validDbOrder = (dbOrder || []).filter((item) => !blacklistedIds.has(item.id));
     const sortedIds = new Set(validDbOrder.map((item) => item.id));
+    // The Cloudinary list carries each photo's pixel size. Passing it on lets
+    // the gallery reserve every tile's space before the image downloads.
+    const cloudMetaById = new Map(
+      cloudResources.map((resource) => [resource.public_id, resource])
+    );
 
     const finalItems = [
       ...validDbOrder.map((item) => {
@@ -80,9 +87,13 @@ export async function fetchPhotosByTag(tag: string | null) {
           descriptionText = (rawDescription as any).description || "";
         }
 
+        const cloudMeta = cloudMetaById.get(item.id);
+
         return {
           id: item.id,
           url: cloudinaryImage(item.url),
+          width: cloudMeta?.width,
+          height: cloudMeta?.height,
           alt: photoAlt(tag),
           description: descriptionText,
           mobileHero: Boolean(item.mobile_hero),
@@ -96,6 +107,8 @@ export async function fetchPhotosByTag(tag: string | null) {
           url: cloudinaryImage(
             `https://res.cloudinary.com/${CLOUD_NAME}/image/upload/${r.public_id}.${r.format}`
           ),
+          width: r.width,
+          height: r.height,
           alt: photoAlt(tag),
           description: "",
           mobileHero: false,

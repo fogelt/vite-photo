@@ -1,4 +1,5 @@
 import { supabase, createClerkSupabaseClient } from "@/services";
+import { warmCloudinaryImage } from "@/utils/warm-cloudinary";
 
 export interface PhotoVariant {
   id: string;
@@ -147,6 +148,10 @@ export const uploadAndSavePhoto = async (
     tag: tag,
     position: -1
   });
+
+  // Create the grid and modal sizes now, so the first visitor isn't the one
+  // waiting for Cloudinary to resize the original.
+  warmCloudinaryImage(uploadedImage.secure_url);
 };
 
 export const uploadAndSaveVariant = async (
@@ -164,6 +169,8 @@ export const uploadAndSaveVariant = async (
     url: uploadedImage.secure_url,
     position: 99
   });
+
+  warmCloudinaryImage(uploadedImage.secure_url);
 };
 
 // --- Article Specific ---
