@@ -137,7 +137,7 @@ const KIND_META: Record<
 /** Rows written before the `kind` column existed have no value and are weddings. */
 const kindOf = (client: WeddingClient): ClientKind => client.kind ?? "wedding";
 
-const WEEKDAYS =["Mån", "Tis", "Ons", "Tor", "Fre", "Lör", "Sön"];
+const WEEKDAYS = ["Mån", "Tis", "Ons", "Tor", "Fre", "Lör", "Sön"];
 
 const monthFormatter = new Intl.DateTimeFormat("sv-SE", { month: "long", year: "numeric" });
 const longDateFormatter = new Intl.DateTimeFormat("sv-SE", {
@@ -439,19 +439,19 @@ export function WeddingPlanner({ onClose }: { onClose: () => void }) {
           <StatCard
             label="Bokade kunder"
             value={bookedCount}
-            icon={<HeartHandshake size={16} className="text-emerald-600" />}
+            icon={<HeartHandshake size={16} className="text-stone-900" />}
           />
           <StatCard
             label="Uppdrag denna månad"
             value={monthBookings}
-            icon={<CalendarDays size={16} className="text-sky-600" />}
+            icon={<CalendarDays size={16} className="text-stone-900" />}
           />
           <StatCard
             label="Att följa upp"
             value={followUps.length}
-            icon={<BellRing size={16} className="text-amber-600" />}
+            icon={<BellRing size={16} className="text-stone-900" />}
           />
-          <StatCard label="Totalt antal" value={clients.length} icon={<Users size={16} className="text-stone-500" />} />
+          <StatCard label="Totalt antal" value={clients.length} icon={<Users size={16} className="text-stone-900" />} />
         </div>
 
         {actionError && (
@@ -1321,7 +1321,7 @@ function ClientEditor({
                     />
                     {draft.couple_photo_url ? (
                       <>
-                        <img src={draft.couple_photo_url} alt={kindMeta.party}className="h-full w-full object-cover" />
+                        <img src={draft.couple_photo_url} alt={kindMeta.party} className="h-full w-full object-cover" />
                         <span className="absolute inset-0 flex items-center justify-center gap-2 bg-stone-900/55 text-[9px] font-bold uppercase tracking-widest text-white opacity-0 transition-opacity group-hover:opacity-100">
                           {uploading ? <Loader2 size={16} className="animate-spin" /> : <ImagePlus size={16} />}
                           {uploading ? "Laddar upp..." : "Byt bild"}
