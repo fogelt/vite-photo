@@ -1,7 +1,20 @@
-import { useEffect, useState } from "react";
-import { AppWindowMac, ArrowRight, ChevronDown, Download, FileSignature, HeartHandshake, Info, LoaderCircle } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import {
+  AppWindowMac,
+  ArrowRight,
+  CalendarDays,
+  ChevronDown,
+  Clock,
+  Download,
+  FileSignature,
+  HeartHandshake,
+  Info,
+  LoaderCircle,
+} from "lucide-react";
 import { useAuth, UserButton, useUser } from "@clerk/clerk-react";
-import { supabase } from "@/services";
+import { useQuery } from "@tanstack/react-query";
+import { createClerkSupabaseClient, fetchPhotosByTag, supabase } from "@/services";
+import { cloudinaryImage } from "@/utils";
 import { ArticleAdmin } from "@/components/ui/admin-gui/article-editor";
 import { PhotoEditor } from "@/components/ui/admin-gui/photo-editor";
 import { AboutAdmin } from "@/components/ui/admin-gui/about-editor";
@@ -30,6 +43,15 @@ const APP_RELEASES = [
 ] as const;
 
 type AppId = (typeof APP_RELEASES)[number]["id"];
+
+/**
+ * 0-based index of the gallery photo used as the site switcher thumbnail.
+ * Easy to bump if the first photo doesn't represent the site well.
+ */
+const SITE_SWITCHER_PHOTO: Record<"portfolio" | "wedding", number> = {
+  portfolio: 1,
+  wedding: 0,
+};
 
 type AppDownload = { url: string; size: number; publishedAt: string | null };
 
@@ -249,6 +271,147 @@ function formatReleaseAge(publishedAt: string | null): string | null {
 
 const wait = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
 
+/** The fields the dashboard timeline needs from `wedding_clients`. */
+type UpcomingClient = {
+  id: string;
+  couple_names: string;
+  wedding_date: string | null;
+  wedding_time: string | null;
+  venue: string | null;
+  status: string;
+};
+
+const STATUS_DOT: Record<string, string> = {
+  lead: "bg-stone-400",
+  contacted: "bg-sky-500",
+  meeting: "bg-amber-500",
+  booked: "bg-emerald-500",
+  completed: "bg-violet-500",
+  declined: "bg-rose-400",
+};
+
+const monthShortFormatter = new Intl.DateTimeFormat("sv-SE", { month: "short" });
+
+const pad = (value: number) => String(value).padStart(2, "0");
+
+const ymd = (date: Date) =>
+  `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+
+const parseYmd = (value: string) => {
+  const [year, month, day] = value.split("-").map(Number);
+  return new Date(year, month - 1, day);
+};
+
+const dateBadge = (value: string) => {
+  const date = parseYmd(value);
+  return {
+    day: date.getDate(),
+    month: monthShortFormatter.format(date).replace(".", "").toUpperCase(),
+  };
+};
+
+const daysUntilLabel = (value: string) => {
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const days = Math.round((parseYmd(value).getTime() - today.getTime()) / 86_400_000);
+
+  if (days <= 0) return "Idag";
+  if (days === 1) return "Imorgon";
+  if (days < 14) return `Om ${days} dagar`;
+
+  if (days < 60) {
+    const weeks = Math.round(days / 7);
+    return `Om ${weeks} ${weeks === 1 ? "vecka" : "veckor"}`;
+  }
+
+  if (days < 365) {
+    const months = Math.round(days / 30);
+    return `Om ${months} ${months === 1 ? "månad" : "månader"}`;
+  }
+
+  return `Om ${Math.round(days / 365)} år`;
+};
+
+function UpcomingTimeline({
+  clients,
+  isLoading,
+}: {
+  clients: UpcomingClient[];
+  isLoading: boolean;
+}) {
+  return (
+    <div className="mt-6 border-t border-stone-100 pt-4">
+      <div className="flex items-center justify-between">
+        <p className="flex items-center gap-1.5 text-[8px] font-bold uppercase tracking-widest text-stone-400">
+          <CalendarDays size={11} />
+          Kommande uppdrag
+        </p>
+        {clients.length > 0 && (
+          <span className="text-[8px] font-bold text-stone-300">{clients.length}</span>
+        )}
+      </div>
+
+      {isLoading ? (
+        <p className="mt-3 text-[8px] uppercase tracking-widest text-stone-300">Hämtar…</p>
+      ) : clients.length === 0 ? (
+        <p className="mt-3 border border-dashed border-stone-100 px-3 py-3 text-center text-[8px] uppercase tracking-wide text-stone-300">
+          Inga kommande uppdrag
+        </p>
+      ) : (
+        <ol className="mt-3">
+          {clients.map((client, index) => {
+            const badge = dateBadge(client.wedding_date!);
+            const isLast = index === clients.length - 1;
+
+            return (
+              <li key={client.id} className="relative flex gap-3 pb-3 last:pb-0">
+                {!isLast && (
+                  <span
+                    aria-hidden
+                    className="absolute bottom-0 left-[15px] top-8 w-px bg-stone-200"
+                  />
+                )}
+                <span className="relative z-10 flex h-8 w-8 shrink-0 flex-col items-center justify-center bg-stone-900 text-white">
+                  <span className="text-[11px] font-light leading-none">{badge.day}</span>
+                  <span className="mt-0.5 text-[6px] uppercase tracking-wider text-stone-400">
+                    {badge.month}
+                  </span>
+                </span>
+                <div className="min-w-0 flex-1 pt-0.5">
+                  <p className="flex items-center gap-1.5">
+                    <span
+                      className={`h-1.5 w-1.5 shrink-0 rounded-full ${STATUS_DOT[client.status] ?? "bg-stone-400"}`}
+                    />
+                    <span className="truncate text-[10px] font-bold uppercase tracking-wide text-stone-800">
+                      {client.couple_names}
+                    </span>
+                  </p>
+                  <p className="mt-0.5 flex items-center gap-1 truncate text-[8px] uppercase tracking-wide text-stone-400">
+                    <Clock size={8} className="shrink-0" />
+                    <span className="shrink-0">{daysUntilLabel(client.wedding_date!)}</span>
+                    {client.wedding_time && (
+                      <>
+                        <span>·</span>
+                        <span className="shrink-0">{client.wedding_time.slice(0, 5)}</span>
+                      </>
+                    )}
+                    {client.venue && (
+                      <>
+                        <span>·</span>
+                        <span className="truncate">{client.venue}</span>
+                      </>
+                    )}
+                  </p>
+                </div>
+              </li>
+            );
+          })}
+        </ol>
+      )}
+    </div>
+  );
+}
+
 function AdminCard({ title, description, onClick, isActive, note }: { title: string; description: string; onClick: () => void, isActive: boolean, note?: string }) {
   return (
     <button
@@ -295,6 +458,60 @@ export function AdminLayout() {
   const [downloadDuration, setDownloadDuration] = useState(1800);
   const [appDownloads, setAppDownloads] = useState<Partial<Record<AppId, AppDownload>>>({});
   const [appDownloadError, setAppDownloadError] = useState<{ repo: string; message: string } | null>(null);
+
+  // Shared with the planner: same cache key, and `select("*")` keeps the
+  // cached rows complete for the planner's editor even if the dashboard
+  // fetched them first.
+  const {
+    data: planningClients = [],
+    isLoading: isPlanningLoading,
+  } = useQuery({
+    queryKey: ["wedding-clients"],
+    queryFn: async () => {
+      const token = await getToken({ template: "supabase" });
+      if (!token) throw new Error("Verifiering misslyckades. Logga in igen.");
+      const client = createClerkSupabaseClient(token);
+      const { data, error } = await client
+        .from("wedding_clients")
+        .select("*")
+        .order("wedding_date", { ascending: true, nullsFirst: false });
+      if (error) throw error;
+      return (data ?? []) as UpcomingClient[];
+    },
+    // A failed lookup should only blank the timeline, not hammer Supabase.
+    retry: false,
+  });
+
+  const upcomingBookings = useMemo(() => {
+    const today = ymd(new Date());
+
+    return planningClients
+      .filter(
+        (client) =>
+          client.wedding_date &&
+          client.wedding_date >= today &&
+          client.status !== "declined",
+      )
+      .sort(
+        (a, b) =>
+          (a.wedding_date ?? "").localeCompare(b.wedding_date ?? "") ||
+          (a.wedding_time ?? "").localeCompare(b.wedding_time ?? ""),
+      )
+      .slice(0, 4);
+  }, [planningClients]);
+
+  // First photo of each site's gallery, used as the diagonal accent on the
+  // site switcher. Same cache keys as the photo editor, so reordering or
+  // uploading a photo updates the switcher too.
+  const { data: portfolioPhotos = [] } = useQuery({
+    queryKey: ["photos", "portfolio"],
+    queryFn: () => fetchPhotosByTag("portfolio"),
+  });
+
+  const { data: weddingPhotos = [] } = useQuery({
+    queryKey: ["photos", "weddings_main"],
+    queryFn: () => fetchPhotosByTag("weddings_main"),
+  });
 
   // Resolve the latest DMG URLs up front so a normal click can start the
   // download immediately (Safari is strict about downloads from async code).
@@ -503,25 +720,29 @@ export function AdminLayout() {
               closeAllEditors();
               setIsWeddingPlannerOpen(true);
             }}
-            className="group w-full h-full border border-stone-100 bg-white p-6 md:p-8 text-left shadow-sm transition-all hover:border-stone-400 hover:shadow-md"
+            className="group w-full h-full md:col-start-1 md:row-span-2 border border-stone-100 bg-white p-6 md:p-8 text-left shadow-sm transition-all hover:border-stone-400 hover:shadow-md"
           >
-            <div className="flex h-full flex-col md:flex-row md:items-center gap-6">
-              <div className="flex h-14 w-14 shrink-0 items-center justify-center bg-stone-900 text-white">
-                <HeartHandshake size={22} />
+            <div className="flex h-full flex-col gap-6">
+              <div className="flex flex-1 flex-col gap-6 md:flex-row md:items-center">
+                <div className="flex h-14 w-14 shrink-0 items-center justify-center bg-stone-900 text-white">
+                  <HeartHandshake size={22} />
+                </div>
+                <div className="flex-1">
+                  <h3 className="text-xs uppercase tracking-widest font-bold">Kundplanering</h3>
+                  <p className="text-[9px] text-stone-400 uppercase tracking-widest mt-1 font-bold">
+                    Kunder, samtal, bilder och kalender
+                  </p>
+                  <p className="mt-3 max-w-2xl text-xs font-light leading-relaxed text-stone-500">
+                    Skriv ner vad ni pratade om, spara ett foto på kunden och se bröllop, privata och företagsuppdrag i en visuell kalender.
+                  </p>
+                </div>
+                <div className="flex items-center gap-2 text-[9px] uppercase tracking-widest font-bold text-stone-900">
+                  Öppna planering
+                  <ArrowRight size={14} className="transition-transform group-hover:translate-x-1" />
+                </div>
               </div>
-              <div className="flex-1">
-                <h3 className="text-xs uppercase tracking-widest font-bold">Kundplanering</h3>
-                <p className="text-[9px] text-stone-400 uppercase tracking-widest mt-1 font-bold">
-                  Kunder, samtal, bilder och kalender
-                </p>
-                <p className="mt-3 max-w-2xl text-xs font-light leading-relaxed text-stone-500">
-                  Skriv ner vad ni pratade om, spara ett foto på kunden och se bröllop, privata och företagsuppdrag i en visuell kalender.
-                </p>
-              </div>
-              <div className="flex items-center gap-2 text-[9px] uppercase tracking-widest font-bold text-stone-900">
-                Öppna planering
-                <ArrowRight size={14} className="transition-transform group-hover:translate-x-1" />
-              </div>
+
+              <UpcomingTimeline clients={upcomingBookings} isLoading={isPlanningLoading} />
             </div>
           </button>
 
@@ -529,7 +750,7 @@ export function AdminLayout() {
             type="button"
             onClick={openContracts}
             disabled={isOpeningContracts}
-            className="group w-full h-full border border-stone-100 bg-white p-6 md:p-8 text-left shadow-sm transition-all hover:border-stone-400 hover:shadow-md disabled:cursor-wait disabled:opacity-60"
+            className="group w-full h-full md:col-start-2 md:row-start-1 border border-stone-100 bg-white p-6 md:p-8 text-left shadow-sm transition-all hover:border-stone-400 hover:shadow-md disabled:cursor-wait disabled:opacity-60"
           >
             <div className="flex h-full flex-col md:flex-row md:items-center gap-6">
               <div className="flex h-14 w-14 shrink-0 items-center justify-center bg-stone-900 text-white">
@@ -550,7 +771,7 @@ export function AdminLayout() {
               </div>
             </div>
           </button>
-          <div className="w-full h-full border border-stone-100 bg-white p-6 md:p-8 text-left shadow-sm transition-colors hover:border-stone-400">
+          <div className="w-full h-full md:col-start-2 md:row-start-2 border border-stone-100 bg-white p-6 md:p-8 text-left shadow-sm transition-colors hover:border-stone-400">
             <div className="flex flex-col md:flex-row md:items-center gap-6">
               <div className="flex h-14 w-14 shrink-0 items-center justify-center bg-stone-900 text-white">
                 <AppWindowMac size={22} />
@@ -702,19 +923,47 @@ export function AdminLayout() {
             { id: 'portfolio', title: 'Portföljsajt', hint: 'myeliefoto.se' },
             { id: 'wedding', title: 'Bröllopssajt', hint: 'myeliebrollopsfoto.se' },
           ] as const
-        ).map((s) => (
-          <button
-            key={s.id}
-            onClick={() => switchSite(s.id)}
-            className={`flex-1 border px-6 py-4 text-left transition-all ${site === s.id
-              ? 'border-stone-900 bg-stone-900 text-white shadow-md'
-              : 'border-stone-100 bg-white text-stone-400 hover:border-stone-400 hover:text-stone-900'
-              }`}
-          >
-            <span className="block text-xs uppercase tracking-widest font-bold">{s.title}</span>
-            <span className={`block text-[10px] uppercase tracking-tighter mt-1 ${site === s.id ? 'text-stone-300' : 'text-stone-300'}`}>{s.hint}</span>
-          </button>
-        ))}
+        ).map((s) => {
+          const isSelected = site === s.id;
+          const photos = s.id === 'portfolio' ? portfolioPhotos : weddingPhotos;
+          const photo =
+            photos[SITE_SWITCHER_PHOTO[s.id]]?.url ?? photos[0]?.url;
+
+          return (
+            <button
+              key={s.id}
+              onClick={() => switchSite(s.id)}
+              className={`group relative flex-1 overflow-hidden border px-6 py-5 text-left transition-all ${isSelected
+                ? 'border-stone-900 bg-stone-900 text-white shadow-md'
+                : 'border-stone-100 bg-white text-stone-400 hover:border-stone-400 hover:text-stone-900'
+                }`}
+            >
+              {photo && (
+                <span
+                  aria-hidden
+                  className="pointer-events-none absolute inset-y-0 right-0 w-[42%]"
+                  style={{ clipPath: 'polygon(30% 0, 100% 0, 100% 100%, 0 100%)' }}
+                >
+                  <img
+                    src={cloudinaryImage(photo, { width: 640 })}
+                    alt=""
+                    loading="lazy"
+                    decoding="async"
+                    className={`h-full w-full object-cover transition-all duration-500 ${isSelected
+                      ? 'opacity-100'
+                      : 'opacity-60 grayscale group-hover:opacity-90 group-hover:grayscale-0'
+                      }`}
+                  />
+                </span>
+              )}
+
+              <span className="relative z-10 block max-w-[56%]">
+                <span className="block text-xs uppercase tracking-widest font-bold">{s.title}</span>
+                <span className={`block text-[10px] uppercase tracking-tighter mt-1 ${isSelected ? 'text-stone-300' : 'text-stone-300'}`}>{s.hint}</span>
+              </span>
+            </button>
+          );
+        })}
       </div>
 
 
