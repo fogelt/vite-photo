@@ -1,10 +1,12 @@
-import { useEffect } from 'react';
-import { Outlet } from 'react-router-dom';
+import { useEffect, useLayoutEffect, useRef } from 'react';
+import { Outlet, useLocation } from 'react-router-dom';
 import { Header, Footer } from '@/components/ui';
 import {
   markSiteMounted,
   revealSiteCurtain,
   ScrollToTop,
+  settleSiteCurtain,
+  showSiteCurtain,
   waitForImages,
 } from '@/utils';
 
@@ -29,6 +31,19 @@ function firstVisibleImageSrcs() {
 const PHOTO_WAIT_CAP = 4000;
 
 export default function AppRoot() {
+  const { pathname } = useLocation();
+  const lastPathname = useRef(pathname);
+
+  // Every route change gets the same dissolve. The navigation itself may have
+  // covered the page already; this makes sure it is covered and then starts the
+  // wave once the new route is committed.
+  useLayoutEffect(() => {
+    if (lastPathname.current === pathname) return;
+    lastPathname.current = pathname;
+    showSiteCurtain();
+    settleSiteCurtain();
+  }, [pathname]);
+
   // The white curtain from index.html stays up until the first photos are in,
   // then waves away from the top-left corner. Waiting for those photos means
   // the page is never revealed half-empty, while the curtain hides the wait

@@ -16,33 +16,35 @@
 
   <!--
     The loading curtain. Kept inline because the stylesheet below loads without
-    blocking, so this must not depend on it: the page stays plain white from the
-    first paint until the opening photos are ready, shows a spinner only if that
-    takes more than two seconds, then waves away from the top-left corner.
+    blocking, so this must not depend on it: the page stays white from the first
+    paint until the opening photos are ready, then a soft-edged wave slides away
+    from the top-left corner. The same wave covers every route change. A spinner
+    fades in only if the first load takes more than two seconds.
   -->
   <style>
     #site-curtain {
       position: fixed;
       inset: 0;
       z-index: 9999;
+      overflow: hidden;
       /* A white wash with a soft diagonal edge, sized three times the viewport
          and parked so that edge sits off-screen above the top-left corner. The
-         reveal slides it towards the bottom-right and leaves the page behind. */
+         reveal slides it down and across the page. */
       background-image: linear-gradient(
-        135deg,
+        155deg,
         transparent 0%,
-        transparent 30%,
-        #ffffff 33%,
+        transparent 28%,
+        #ffffff 34%,
         #ffffff 100%
       );
       background-repeat: no-repeat;
       background-size: 300% 300%;
       background-position: 55% 55%;
-      transition: background-position 1250ms cubic-bezier(0.4, 0, 0.2, 1);
+      transition: background-position 1300ms cubic-bezier(0.22, 1, 0.36, 1);
     }
 
     #site-curtain.is-revealing {
-      background-position: -6% -6%;
+      background-position: -10% -10%;
       pointer-events: none;
     }
 
@@ -112,7 +114,7 @@
 
     @media (prefers-reduced-motion: reduce) {
       #site-curtain {
-        transition-duration: 1ms;
+        transition-duration: 1ms !important;
       }
     }
   </style>
@@ -235,10 +237,11 @@
 
 <body>
   <!--
-    Starts as a plain white screen. The app calls window.__revealSite once the
-    opening photos have loaded; the script below turns that into a diagonal
-    wave. window.__siteMounted arms a last-resort reveal, so a photo that never
-    finishes cannot trap an app that did render.
+    Starts as a plain white screen. The app calls __revealSite once the opening
+    photos have loaded, and __siteCurtainShow / __siteCurtainSettle on every
+    route change; both end in the same soft diagonal wave. __siteMounted arms a
+    last-resort reveal, so a photo that never finishes cannot trap an app that
+    did render.
   -->
   <div id="site-curtain" role="status" aria-live="polite">
     <div class="sc-spinner" aria-hidden="true">
@@ -252,9 +255,17 @@
   <script>
     (function () {
       var SPINNER_AFTER = 2000;
-      var GIVE_UP_AFTER = 12000;
-      // Matches the background-position transition in the stylesheet above.
-      var WAVE_DURATION = 1250;
+      var FIRST_GIVE_UP_AFTER = 12000;
+      var ROUTE_GIVE_UP_AFTER = 6000;
+      // The first sheet uses the CSS transition below; route sheets get a
+      // quicker one inline.
+      var FIRST_WAVE = 1300;
+      var ROUTE_WAVE = 800;
+      // A short beat of white so a fast `settle` still reads as a transition.
+      var ROUTE_HOLD = 150;
+      // Give the new route's photos a moment to arrive before the wave, but
+      // never hold the page back for long.
+      var ROUTE_PHOTO_WAIT = 500;
 
       var curtain = document.getElementById('site-curtain');
       if (!curtain) return;
@@ -271,23 +282,22 @@
       var stylesReady = !stylesheet || Boolean(stylesheet.sheet);
       var pending = false;
       var revealed = false;
+      var waveDuration = FIRST_WAVE;
+      var spinnerTimer = null;
       var giveUpTimer = null;
+      var removeTimer = null;
 
-      // Plain white for the first couple of seconds: someone on a good
-      // connection never sees a loading state at all.
-      var spinnerTimer = window.setTimeout(function () {
-        if (!revealed) curtain.classList.add('is-slow');
-      }, SPINNER_AFTER);
+      function clearTimers() {
+        window.clearTimeout(spinnerTimer);
+        window.clearTimeout(giveUpTimer);
+        window.clearTimeout(removeTimer);
+      }
 
-      /**
-       * Only give up on a photo once the app has actually rendered. Arming this
-       * earlier would remove the curtain on a very slow connection while the
-       * bundle is still downloading, uncovering a blank page that looks broken;
-       * an honest spinner is better than that.
-       */
-      function armFailsafe() {
-        if (revealed || giveUpTimer) return;
-        giveUpTimer = window.setTimeout(reveal, GIVE_UP_AFTER);
+      /** Plain white for the first couple of seconds: no spinner on a fast load. */
+      function startSpinner() {
+        spinnerTimer = window.setTimeout(function () {
+          if (!revealed) curtain.classList.add('is-slow');
+        }, SPINNER_AFTER);
       }
 
       function revealNow() {
@@ -297,17 +307,140 @@
 
         window.clearTimeout(spinnerTimer);
         window.clearTimeout(giveUpTimer);
-        curtain.classList.add('is-revealing');
 
-        window.setTimeout(function () {
-          if (curtain.parentNode) curtain.parentNode.removeChild(curtain);
-        }, reducedMotion ? 150 : WAVE_DURATION + 250);
+        var element = curtain;
+        element.classList.add('is-revealing');
+
+        window.clearTimeout(removeTimer);
+        removeTimer = window.setTimeout(function () {
+          if (element.parentNode) element.parentNode.removeChild(element);
+        }, reducedMotion ? 150 : waveDuration + 250);
       }
 
       function reveal() {
         if (revealed) return;
         pending = true;
         if (stylesReady) revealNow();
+      }
+
+      /**
+       * Only give up on a photo once the app has actually rendered. Arming this
+       * earlier would remove the curtain on a very slow connection while the
+       * bundle is still downloading, uncovering a blank page that looks broken;
+       * an honest spinner is better than that.
+       */
+      function armFirstFailsafe() {
+        if (revealed || giveUpTimer) return;
+        giveUpTimer = window.setTimeout(reveal, FIRST_GIVE_UP_AFTER);
+      }
+
+      /** The photos near the top of the page, which the wave reveals first. */
+      function firstVisibleImageSrcs() {
+        var viewportHeight = window.innerHeight;
+        var images = document.querySelectorAll('main img');
+        var srcs = [];
+
+        for (var i = 0; i < images.length && srcs.length < 4; i++) {
+          var rect = images[i].getBoundingClientRect();
+          if (rect.bottom > 0 && rect.top < viewportHeight) {
+            var src = images[i].currentSrc || images[i].src;
+            if (src) srcs.push(src);
+          }
+        }
+
+        return srcs;
+      }
+
+      function waitForImage(src) {
+        return new Promise(function (resolve) {
+          var image = new Image();
+          image.onload = resolve;
+          image.onerror = resolve;
+          image.src = src;
+        });
+      }
+
+      /** Reveal once the new route's opening photos are in, or after a beat. */
+      function revealWhenPhotosReady(element) {
+        var done = false;
+
+        var finish = function () {
+          if (done) return;
+          done = true;
+          if (curtain === element) revealNow();
+        };
+
+        // Never hold the page back longer than this, photo or skeleton.
+        window.setTimeout(finish, ROUTE_PHOTO_WAIT);
+
+        var check = function () {
+          if (done || curtain !== element) return;
+
+          var srcs = firstVisibleImageSrcs();
+          if (srcs.length > 0) {
+            Promise.all(srcs.map(waitForImage)).then(finish);
+            return;
+          }
+
+          window.setTimeout(check, 80);
+        };
+
+        check();
+      }
+
+      /**
+       * Cover the page with a fresh sheet. Called when a navigation starts, so
+       * the old page is hidden before the new route's chunk arrives — and again
+       * when the route lands, in which case the sheet is already up.
+       */
+      function show() {
+        if (
+          curtain &&
+          curtain.parentNode &&
+          !curtain.classList.contains('is-revealing')
+        ) {
+          return;
+        }
+
+        clearTimers();
+
+        if (curtain && curtain.parentNode) curtain.parentNode.removeChild(curtain);
+
+        // Purely visual: the route underneath has already rendered, so there is
+        // nothing loading to announce to a screen reader.
+        var element = document.createElement('div');
+        element.id = 'site-curtain';
+        element.setAttribute('aria-hidden', 'true');
+        // Sit under the sticky header (z-60) so the site's chrome stays put
+        // while the page below it waves in.
+        element.style.zIndex = '50';
+        // Route waves are quicker than the first load's.
+        element.style.transitionDuration = ROUTE_WAVE + 'ms';
+        document.body.appendChild(element);
+
+        curtain = element;
+        waveDuration = ROUTE_WAVE;
+        revealed = false;
+        pending = false;
+
+        // A stuck page must never be left behind a blank sheet.
+        giveUpTimer = window.setTimeout(function () {
+          if (curtain === element) revealNow();
+        }, ROUTE_GIVE_UP_AFTER);
+      }
+
+      /**
+       * The new route is committed: hold briefly, let its opening photos arrive
+       * (a beat, not a wait for everything), then start the wave.
+       */
+      function settle() {
+        var element = curtain;
+        if (!element) return;
+
+        window.setTimeout(function () {
+          if (curtain !== element) return;
+          revealWhenPhotosReady(element);
+        }, ROUTE_HOLD);
       }
 
       if (stylesheet && !stylesReady) {
@@ -319,8 +452,12 @@
         stylesheet.addEventListener('error', markStylesReady);
       }
 
+      startSpinner();
+
       window.__revealSite = reveal;
-      window.__siteMounted = armFailsafe;
+      window.__siteMounted = armFirstFailsafe;
+      window.__siteCurtainShow = show;
+      window.__siteCurtainSettle = settle;
     })();
   </script>
 

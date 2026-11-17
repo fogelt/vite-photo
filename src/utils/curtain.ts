@@ -20,6 +20,10 @@ declare global {
     __revealSite?: () => void;
     /** Arms the curtain's last-resort reveal. Defined by index.html. */
     __siteMounted?: () => void;
+    /** Covers the page again for a route change. Defined by index.html. */
+    __siteCurtainShow?: () => void;
+    /** Starts the route wave once the new route has landed. Defined by index.html. */
+    __siteCurtainSettle?: () => void;
   }
 }
 
@@ -31,6 +35,22 @@ export function isSiteCurtainVisible() {
 /** Reveal the page with the diagonal wave. Safe to call more than once. */
 export function revealSiteCurtain() {
   window.__revealSite?.();
+}
+
+/**
+ * Cover the page and wave it away again, for a route change. Call it when a
+ * navigation starts so the old page is hidden while the new route loads.
+ */
+export function showSiteCurtain() {
+  window.__siteCurtainShow?.();
+}
+
+/**
+ * The new route has committed: hold for a beat, give its opening photos a
+ * moment, then dissolve. Safe to call after `showSiteCurtain`.
+ */
+export function settleSiteCurtain() {
+  window.__siteCurtainSettle?.();
 }
 
 /**
