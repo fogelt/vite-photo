@@ -17,13 +17,9 @@ type AppProviderProps = {
 export const AppProvider = ({ children }: AppProviderProps) => {
   return (
     <QueryClientProvider client={queryClient}>
-      <React.Suspense
-        fallback={
-          <div className="flex h-screen w-screen items-center justify-center">
-            <span className="text-[10px] uppercase tracking-widest text-gray-400">Laddar…</span>
-          </div>
-        }
-      >
+      {/* Nothing is shown while a route resolves: the white curtain in
+          index.html covers this, so there is never a loading state to see. */}
+      <React.Suspense fallback={null}>
         {children}
       </React.Suspense>
       <ReactQueryDevtools initialIsOpen={false} />

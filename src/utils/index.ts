@@ -1,4 +1,5 @@
 export * from './cloudinary'
+export * from './curtain'
 export * from './preload-image'
 export * from './use-image-loaded'
 export * from './scroll-to-top'

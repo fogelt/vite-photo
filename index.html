@@ -13,6 +13,117 @@
   <meta name="author" content="Myelie Lendelund" />
   <meta name="robots" content="index,follow" />
   <link rel="canonical" href="https://myeliefoto.se/" />
+
+  <!--
+    The loading curtain. Kept inline because the stylesheet below loads without
+    blocking, so this must not depend on it: the page stays plain white from the
+    first paint until the opening photos are ready, shows a spinner only if that
+    takes more than two seconds, then waves away from the top-left corner.
+  -->
+  <style>
+    #site-curtain {
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+      /* A white wash with a soft diagonal edge, sized three times the viewport
+         and parked so that edge sits off-screen above the top-left corner. The
+         reveal slides it towards the bottom-right and leaves the page behind. */
+      background-image: linear-gradient(
+        135deg,
+        transparent 0%,
+        transparent 30%,
+        #ffffff 33%,
+        #ffffff 100%
+      );
+      background-repeat: no-repeat;
+      background-size: 300% 300%;
+      background-position: 55% 55%;
+      transition: background-position 1250ms cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    #site-curtain.is-revealing {
+      background-position: -6% -6%;
+      pointer-events: none;
+    }
+
+    #site-curtain .sc-spinner {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 88px;
+      height: 88px;
+      margin: -44px 0 0 -44px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      transition: opacity 700ms ease;
+    }
+
+    /* The ring rotates on its own so the label inside stays still. */
+    #site-curtain .sc-spinner::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border: 1px solid rgba(28, 25, 23, 0.08);
+      border-top-color: #78716c;
+      border-radius: 50%;
+      animation: sc-spin 1.2s linear infinite;
+    }
+
+    #site-curtain.is-slow .sc-spinner {
+      opacity: 1;
+    }
+
+    #site-curtain.is-revealing .sc-spinner {
+      opacity: 0;
+      transition-duration: 250ms;
+    }
+
+    #site-curtain .sc-label {
+      padding-left: 0.28em;
+      font-family: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto,
+        'Helvetica Neue', Arial, sans-serif;
+      font-size: 9px;
+      line-height: 1;
+      letter-spacing: 0.28em;
+      text-transform: uppercase;
+      color: #78716c;
+      user-select: none;
+    }
+
+    #site-curtain .sc-sr {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
+
+    @keyframes sc-spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      #site-curtain {
+        transition-duration: 1ms;
+      }
+    }
+  </style>
+  <noscript>
+    <style>
+      #site-curtain {
+        display: none;
+      }
+    </style>
+  </noscript>
+
   <link rel="preconnect" href="https://res.cloudinary.com" crossorigin />
 
   <meta property="og:type" content="website" />
@@ -39,7 +150,7 @@
       }
     }(window.location))
   </script>
-  <link href="/src/index.css" rel="stylesheet" media="print" onload="this.media='all'">
+  <link id="main-css" href="/src/index.css" rel="stylesheet" media="print" onload="this.media='all'">
 
   <noscript>
     <link href="/src/index.css" rel="stylesheet">
@@ -123,7 +234,96 @@
 </head>
 
 <body>
+  <!--
+    Starts as a plain white screen. The app calls window.__revealSite once the
+    opening photos have loaded; the script below turns that into a diagonal
+    wave. window.__siteMounted arms a last-resort reveal, so a photo that never
+    finishes cannot trap an app that did render.
+  -->
+  <div id="site-curtain" role="status" aria-live="polite">
+    <div class="sc-spinner" aria-hidden="true">
+      <span class="sc-label">Laddar…</span>
+    </div>
+    <span class="sc-sr">Laddar…</span>
+  </div>
+
   <div id="root"></div>
+
+  <script>
+    (function () {
+      var SPINNER_AFTER = 2000;
+      var GIVE_UP_AFTER = 12000;
+      // Matches the background-position transition in the stylesheet above.
+      var WAVE_DURATION = 1250;
+
+      var curtain = document.getElementById('site-curtain');
+      if (!curtain) return;
+
+      var reducedMotion = Boolean(
+        window.matchMedia &&
+        window.matchMedia('(prefers-reduced-motion: reduce)').matches
+      );
+
+      // The page underneath is styled by the non-blocking stylesheet, so hold
+      // the curtain until that is applied too; otherwise the wave would expose
+      // an unstyled page.
+      var stylesheet = document.getElementById('main-css');
+      var stylesReady = !stylesheet || Boolean(stylesheet.sheet);
+      var pending = false;
+      var revealed = false;
+      var giveUpTimer = null;
+
+      // Plain white for the first couple of seconds: someone on a good
+      // connection never sees a loading state at all.
+      var spinnerTimer = window.setTimeout(function () {
+        if (!revealed) curtain.classList.add('is-slow');
+      }, SPINNER_AFTER);
+
+      /**
+       * Only give up on a photo once the app has actually rendered. Arming this
+       * earlier would remove the curtain on a very slow connection while the
+       * bundle is still downloading, uncovering a blank page that looks broken;
+       * an honest spinner is better than that.
+       */
+      function armFailsafe() {
+        if (revealed || giveUpTimer) return;
+        giveUpTimer = window.setTimeout(reveal, GIVE_UP_AFTER);
+      }
+
+      function revealNow() {
+        if (revealed) return;
+        revealed = true;
+        pending = false;
+
+        window.clearTimeout(spinnerTimer);
+        window.clearTimeout(giveUpTimer);
+        curtain.classList.add('is-revealing');
+
+        window.setTimeout(function () {
+          if (curtain.parentNode) curtain.parentNode.removeChild(curtain);
+        }, reducedMotion ? 150 : WAVE_DURATION + 250);
+      }
+
+      function reveal() {
+        if (revealed) return;
+        pending = true;
+        if (stylesReady) revealNow();
+      }
+
+      if (stylesheet && !stylesReady) {
+        var markStylesReady = function () {
+          stylesReady = true;
+          if (pending) revealNow();
+        };
+        stylesheet.addEventListener('load', markStylesReady);
+        stylesheet.addEventListener('error', markStylesReady);
+      }
+
+      window.__revealSite = reveal;
+      window.__siteMounted = armFailsafe;
+    })();
+  </script>
+
   <script type="module" src="/src/main.tsx"></script>
 </body>
 
