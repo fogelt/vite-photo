@@ -151,7 +151,7 @@ export const uploadAndSavePhoto = async (
 
   // Create the grid and modal sizes now, so the first visitor isn't the one
   // waiting for Cloudinary to resize the original.
-  warmCloudinaryImage(uploadedImage.secure_url);
+  warmCloudinaryImage(uploadedImage.secure_url, tag);
 };
 
 export const uploadAndSaveVariant = async (

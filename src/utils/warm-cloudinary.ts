@@ -1,4 +1,4 @@
-import { cloudinaryWarmUrls, WARM_ACCEPT_HEADERS } from './cloudinary';
+import { cloudinaryWarmUrls, HERO_TAG, heroWarmUrls, WARM_ACCEPT_HEADERS } from './cloudinary';
 
 /**
  * Requests run a few at a time: each one may make Cloudinary resize a large
@@ -28,9 +28,17 @@ function pump() {
  * `no-cors` keeps this a plain image GET with no preflight; `Accept` is a
  * CORS-safelisted header so it is still sent, which is what selects the format
  * under `f_auto`. `no-store` keeps the admin's own cache out of the way.
+ *
+ * Pass the photo's tag so photos that may become the wedding site's hero also
+ * get the hero sizes.
  */
-export function warmCloudinaryImage(url: string) {
-  for (const target of cloudinaryWarmUrls(url)) {
+export function warmCloudinaryImage(url: string, tag?: string) {
+  const targets = [
+    ...cloudinaryWarmUrls(url),
+    ...(tag === HERO_TAG ? heroWarmUrls(url) : []),
+  ];
+
+  for (const target of targets) {
     for (const accept of WARM_ACCEPT_HEADERS) {
       queue.push(() =>
         fetch(target, { mode: 'no-cors', cache: 'no-store', headers: { Accept: accept } })

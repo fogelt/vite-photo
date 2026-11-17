@@ -6,6 +6,13 @@ import { Images } from 'lucide-react';
 /** How long the mouse must rest on a tile before its modal image is fetched. */
 const HOVER_INTENT_DELAY = 120;
 
+/**
+ * Tiles fetched eagerly at high priority. They are on screen at first paint
+ * (the opening row on desktop, the first tiles on phones), and lazy loading
+ * would hold them back until layout, delaying the first photo.
+ */
+const PRIORITY_TILES = 3;
+
 interface Photo {
   id: string;
   url: string;
@@ -351,6 +358,7 @@ export function ImageContainer({
                   className="w-full"
                   imgClassName="w-full h-auto object-cover object-[center_70%] transition-[opacity,transform] duration-700 ease-out group-hover:scale-[1.04]"
                   sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
+                  priority={index < PRIORITY_TILES}
                   revealDelay={Math.min(index, 4) * 60}
                   width={photo.width}
                   height={photo.height}
@@ -396,6 +404,7 @@ export function ImageContainer({
                 variant === 'reportage' ? 'xl:h-full' : 'md:h-full'
               }`}
               sizes={getSizes(index)}
+              priority={index < PRIORITY_TILES}
               revealDelay={Math.min(index, 4) * 60}
               width={photo.width}
               height={photo.height}

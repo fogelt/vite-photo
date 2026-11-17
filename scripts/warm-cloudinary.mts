@@ -2,7 +2,8 @@
  * warm-cloudinary
  * ---------------
  * One-off backfill: asks Cloudinary for the grid and modal sizes of every
- * gallery photo (and its variants), so Cloudinary creates and stores them now
+ * gallery photo (and its variants), plus the wedding hero sizes for
+ * `weddings_main` photos, so Cloudinary creates and stores them now
  * instead of making the first visitor wait for each resize. New uploads are
  * warmed automatically by the admin panel; run this for existing photos, or
  * again whenever the sizes in `src/utils/cloudinary.ts` change.
@@ -20,7 +21,12 @@
  */
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import { cloudinaryWarmUrls, WARM_ACCEPT_HEADERS } from '../src/utils/cloudinary.ts';
+import {
+  cloudinaryWarmUrls,
+  HERO_TAG,
+  heroWarmUrls,
+  WARM_ACCEPT_HEADERS,
+} from '../src/utils/cloudinary.ts';
 
 const CLOUD_NAME = 'dtscgoycp';
 const CONCURRENCY = 4;
@@ -95,10 +101,13 @@ async function collectPhotoUrls() {
 
   const hidden = new Set(blacklist.map((row) => row.photo_id));
   const urls = new Set<string>();
+  /** Main photos of the wedding site's hero tag, which also get the hero sizes. */
+  const heroUrls = new Set<string>();
 
   for (const row of rows) {
     if (hidden.has(row.id)) continue;
     urls.add(row.url);
+    if (row.tag === HERO_TAG) heroUrls.add(row.url);
     for (const variant of row.photo_variants ?? []) urls.add(variant.url);
   }
 
@@ -115,13 +124,13 @@ async function collectPhotoUrls() {
     };
     for (const resource of resources) {
       if (knownIds.has(resource.public_id) || hidden.has(resource.public_id)) continue;
-      urls.add(
-        `https://res.cloudinary.com/${CLOUD_NAME}/image/upload/${resource.public_id}.${resource.format}`,
-      );
+      const url = `https://res.cloudinary.com/${CLOUD_NAME}/image/upload/${resource.public_id}.${resource.format}`;
+      urls.add(url);
+      if (tag === HERO_TAG) heroUrls.add(url);
     }
   }
 
-  return [...urls];
+  return { urls: [...urls], heroUrls };
 }
 
 // --- Warm -------------------------------------------------------------------
@@ -166,8 +175,12 @@ async function runPool<T>(jobs: (() => Promise<T>)[], onDone: (result: T) => voi
   await Promise.all(workers);
 }
 
-const photos = (await collectPhotoUrls()).slice(0, limit);
-const targets = photos.flatMap((url) => cloudinaryWarmUrls(url));
+const collected = await collectPhotoUrls();
+const photos = collected.urls.slice(0, limit);
+const targets = photos.flatMap((url) => [
+  ...cloudinaryWarmUrls(url),
+  ...(collected.heroUrls.has(url) ? heroWarmUrls(url) : []),
+]);
 const jobs = targets.flatMap((url) => WARM_ACCEPT_HEADERS.map((accept) => () => warm(url, accept)));
 
 console.log(

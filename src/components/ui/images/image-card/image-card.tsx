@@ -1,5 +1,10 @@
 import { useEffect, useState } from 'react';
-import { cloudinaryImage, cloudinarySrcSet, GRID_DESKTOP_WIDTH } from '@/utils/cloudinary';
+import {
+  cloudinaryImage,
+  cloudinarySrcSet,
+  GRID_DESKTOP_WIDTH,
+  mobileGridSrcSet,
+} from '@/utils/cloudinary';
 import { useImageLoaded } from '@/utils/use-image-loaded';
 
 interface ImageCardProps {
@@ -13,7 +18,7 @@ interface ImageCardProps {
   has_variant?: React.ReactNode;
   /** Responsive `sizes` hint. Only used when the URL is served by Cloudinary. */
   sizes?: string;
-  /** Widths for the responsive `srcset`. Defaults to the shared Cloudinary scale. */
+  /** Widths for the phone `srcset`. Defaults to `GRID_MOBILE_WIDTHS`, capped at 2x. */
   widths?: number[];
   /** Load immediately instead of lazily. Use for above-the-fold images. */
   priority?: boolean;
@@ -74,7 +79,14 @@ export function ImageCard({
 }: ImageCardProps) {
   const image = useImageLoaded(url);
   const isMobile = useIsMobile();
-  const srcSet = isMobile ? cloudinarySrcSet(url, widths) : undefined;
+  const srcSet = !isMobile
+    ? undefined
+    : widths
+      ? cloudinarySrcSet(url, widths)
+      : mobileGridSrcSet(url, {
+          width: window.innerWidth,
+          pixelRatio: window.devicePixelRatio,
+        });
 
   /**
    * The stagger delay belongs to the reveal only. Keeping it on the element

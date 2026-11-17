@@ -88,6 +88,26 @@ export function cloudinarySrcSet(url: string, widths: number[] = CLOUDINARY_WIDT
 /** Desktop grid tiles are at most ~1000 CSS px wide, so 2000 is sharp on 2x screens. */
 export const GRID_DESKTOP_WIDTH = 2000;
 
+/**
+ * Grid widths on phones. Tiles are full width there, so 900 covers almost
+ * every phone at 2x (a 430 px wide screen needs ~800); 640 serves 1-1.5x
+ * screens and 1400 phones held sideways.
+ */
+export const GRID_MOBILE_WIDTHS = [640, 900, 1400];
+
+/**
+ * `srcset` for the grid on phones. Plain `w` descriptors make a 3x phone fetch
+ * 1200-1600 px wide tiles, about twice the bytes of 2x for no visible gain on a
+ * small screen, so widths above what the screen needs at 2x are left out. The
+ * steps match `GRID_MOBILE_WIDTHS`, so they can be created ahead of time.
+ */
+export function mobileGridSrcSet(url: string, { width, pixelRatio }: Omit<Viewport, 'height'>) {
+  const needed = width * Math.min(pixelRatio || 1, MAX_PIXEL_RATIO);
+  const cap = GRID_MOBILE_WIDTHS.findIndex((step) => step >= needed);
+  const widths = cap === -1 ? GRID_MOBILE_WIDTHS : GRID_MOBILE_WIDTHS.slice(0, cap + 1);
+  return cloudinarySrcSet(url, widths);
+}
+
 /** Height steps for the large modal image. */
 export const MODAL_HEIGHT_STEPS = [1080, 1440, 2160];
 
@@ -135,15 +155,16 @@ export function modalImageSize({ width, height, pixelRatio }: Viewport) {
 
 /**
  * The resized versions of a photo that are worth creating ahead of time: the
- * desktop grid tile, the modal preview and the modal sizes common screens ask
- * for. The 2160 step
- * is left out; only large 2x displays use it and it is the costliest to make.
+ * desktop and phone grid tiles, the modal preview and the modal sizes common
+ * screens ask for. The 2160 modal step and the rarer phone grid steps (640,
+ * 1400) are left out; few screens use them.
  */
 export function cloudinaryWarmUrls(url: string) {
   if (!isCloudinaryUrl(url)) return [];
 
   return [
     cloudinaryImage(url, { width: GRID_DESKTOP_WIDTH }),
+    cloudinaryImage(url, { width: 900 }),
     cloudinaryImage(url, { height: MODAL_PREVIEW_HEIGHT }),
     cloudinaryImage(url, { height: 1080 }),
     cloudinaryImage(url, { height: 1440 }),
@@ -151,6 +172,26 @@ export function cloudinaryWarmUrls(url: string) {
     cloudinaryImage(url, { width: MODAL_PHONE_WIDTH, height: 1440 }),
   ];
 }
+
+/**
+ * Wedding-site hero (`vite-wed-site`, `hero-frames.ts`): the full-bleed phone
+ * frame, capped at 1600 on the long side, and each standing desktop frame.
+ */
+export const HERO_PHONE_SIZE = { width: 1600, height: 1600 };
+export const HERO_STANDING_WIDTH = 1400;
+
+/** The wedding hero sizes, worth creating ahead for photos in `weddings_main`. */
+export function heroWarmUrls(url: string) {
+  if (!isCloudinaryUrl(url)) return [];
+
+  return [
+    cloudinaryImage(url, HERO_PHONE_SIZE),
+    cloudinaryImage(url, { width: HERO_STANDING_WIDTH }),
+  ];
+}
+
+/** The tag whose photos the wedding site's hero is picked from. */
+export const HERO_TAG = 'weddings_main';
 
 /**
  * `f_auto` makes Cloudinary pick the format from the browser's `Accept`
