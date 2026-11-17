@@ -1,8 +1,10 @@
 import { useState } from "react";
+import type { CSSProperties } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { ArrowRight, Check, ChevronDown, ChevronLeft, ChevronRight, Mail, Phone } from "lucide-react";
 import { fetchPhotosByTag, supabase } from "@/services";
 import { ImageContainer } from "@/components/ui";
+import { cloudinaryImage, HERO_STANDING_WIDTH } from "@/utils";
 import {
   DEFAULT_PROCESS_STEPS,
   getProcessIcon,
@@ -27,6 +29,8 @@ interface PreviewPhoto {
   id: string;
   url: string;
   alt?: string;
+  width?: number;
+  height?: number;
 }
 
 /**
@@ -36,7 +40,15 @@ interface PreviewPhoto {
  */
 export function WeddingSitePreview({ items }: { items: any[] }) {
   const photo = (item: any): PreviewPhoto | undefined =>
-    item ? { id: item.id, url: item.url, alt: item.alt } : undefined;
+    item
+      ? {
+          id: item.id,
+          url: item.url,
+          alt: item.alt,
+          width: item.width,
+          height: item.height,
+        }
+      : undefined;
 
   const heroPhotos = items.slice(0, 3).map(photo).filter(Boolean) as PreviewPhoto[];
   const introPhotos = items.slice(3, 11);
@@ -306,59 +318,99 @@ export function WeddingSitePreview({ items }: { items: any[] }) {
   );
 }
 
+/** Fallback portrait ratio when a photo has no stored dimensions. */
+const FALLBACK_HERO_ASPECT = 2 / 3;
+
+function photoAspect(photo?: PreviewPhoto) {
+  if (!photo?.width || !photo?.height) return FALLBACK_HERO_ASPECT;
+  return photo.width / photo.height;
+}
+
 function WeddingHero({ photos }: { photos: PreviewPhoto[] }) {
   const left = photos.length >= 2 ? photos[0] : undefined;
   const center = photos.length >= 2 ? photos[1] : photos[0];
   const right = photos.length >= 3 ? photos[2] : undefined;
 
+  // The three frames share one height, each keeping its own photo's ratio, so
+  // nothing is cropped and no white bands appear inside the frames. Same maths
+  // as the live hero in vite-wed-site (`hero.tsx`).
+  const ratios =
+    [left, center, right]
+      .filter((photo): photo is PreviewPhoto => Boolean(photo?.url))
+      .map(photoAspect)
+      .reduce((sum, ratio) => sum + ratio, 0) || FALLBACK_HERO_ASPECT;
+
+  const hasPhotos = Boolean(center?.url);
+
   return (
-    <div className="relative flex h-[78vh] max-h-[820px] min-h-[520px] w-full items-center justify-center overflow-hidden bg-white">
-      {center?.url ? (
-        <div className="absolute inset-0" aria-hidden="true">
-          <div className="flex h-full w-full gap-2">
-            <HeroStrip photo={left} className="hidden h-full w-[22%] md:block" />
-            <HeroStrip photo={center} className="h-full min-w-0 flex-1" />
-            <HeroStrip photo={right} className="hidden h-full w-[22%] md:block" />
+    <div className="relative flex h-[calc(100svh-4rem)] min-h-[480px] w-full items-center justify-center overflow-hidden bg-white [container-type:size] md:h-[calc(100svh-6.5rem)] md:min-h-[560px]">
+      <div
+        className="relative flex h-full w-full items-center justify-center gap-2 md:h-[min(94cqh,calc((100cqw_-_3rem)/var(--hero-ratios)))] md:w-[min(calc(100cqw_-_2rem),calc(94cqh*var(--hero-ratios)_+_1rem))]"
+        style={{ '--hero-ratios': ratios } as CSSProperties}
+      >
+        {/* Skeletons mirror the three standing columns so the layout never
+            jumps on load. */}
+        {!hasPhotos && (
+          <div className="absolute inset-0 flex items-center justify-center gap-2" aria-hidden="true">
+            <div className="hidden h-full animate-pulse bg-neutral-100 md:block md:w-auto md:aspect-[2/3]" />
+            <div className="h-full w-full animate-pulse bg-neutral-100 md:w-auto md:aspect-[2/3]" />
+            <div className="hidden h-full animate-pulse bg-neutral-100 md:block md:w-auto md:aspect-[2/3]" />
+          </div>
+        )}
+
+        {hasPhotos && (
+          <div className="absolute inset-0 flex items-center justify-center gap-2" aria-hidden="true">
+            <HeroStrip
+              photo={left}
+              className="hidden h-full md:block"
+              style={{ aspectRatio: photoAspect(left) }}
+            />
+            <HeroStrip
+              photo={center}
+              className="h-full w-full md:w-auto"
+              style={{ aspectRatio: photoAspect(center) }}
+            />
+            <HeroStrip
+              photo={right}
+              className="hidden h-full md:block"
+              style={{ aspectRatio: photoAspect(right) }}
+            />
+          </div>
+        )}
+
+        <div className="absolute inset-0 z-10 flex flex-col items-center justify-between px-6 pt-6 pb-12 text-center md:pt-8 md:pb-16">
+          <div className="flex flex-col items-center">
+            <h1 className="mb-2.5 text-3xl font-light uppercase leading-tight tracking-[0.2em] text-white [text-shadow:0_2px_4px_rgba(0,0,0,0.55),0_4px_32px_rgba(0,0,0,0.65)] sm:text-4xl sm:tracking-[0.25em] md:mb-3 md:text-5xl">
+              <span className="sr-only">Bröllopsfotograf Skåne — </span>
+              <span className="block">Myelie</span>
+              <span className="block">Lendelund</span>
+            </h1>
+
+            <span className="mb-2 h-px w-16 bg-white/40 md:mb-2.5" aria-hidden="true" />
+
+            <span className="text-[11px] uppercase tracking-[0.35em] text-white/80 [text-shadow:0_1px_2px_rgba(0,0,0,0.65),0_2px_18px_rgba(0,0,0,0.6)] sm:tracking-[0.5em]">
+              Bröllopsfotograf · Skåne
+            </span>
+          </div>
+
+          <div className="flex flex-col items-center gap-5 md:gap-6">
+            <p className="max-w-xl text-sm font-light italic leading-relaxed text-white/90 [text-shadow:0_1px_2px_rgba(0,0,0,0.65),0_2px_20px_rgba(0,0,0,0.6)] md:text-base">
+              Äkta ögonblick, varsamt bevarade
+            </p>
+
+            <span className="w-full bg-white px-10 py-4 text-[11px] uppercase tracking-[0.28em] text-stone-900 sm:w-auto">
+              Se bilder
+            </span>
           </div>
         </div>
-      ) : (
-        <div className="absolute inset-0 flex gap-2" aria-hidden="true">
-          <div className="hidden h-full w-[22%] animate-pulse bg-neutral-100 md:block" />
-          <div className="h-full min-w-0 flex-1 animate-pulse bg-neutral-100" />
-          <div className="hidden h-full w-[22%] animate-pulse bg-neutral-100 md:block" />
-        </div>
-      )}
 
-      <div className="absolute inset-0 z-10 flex flex-col items-center justify-between px-6 pt-8 pb-12 text-center md:pt-12 md:pb-16">
-        <div className="flex flex-col items-center">
-          <h1 className="mb-4 text-3xl font-light uppercase leading-tight tracking-[0.2em] text-white [text-shadow:0_2px_4px_rgba(0,0,0,0.55),0_4px_32px_rgba(0,0,0,0.65)] sm:text-4xl sm:tracking-[0.25em] md:mb-5 md:text-5xl">
-            Myelie Lendelund
-          </h1>
-
-          <span className="mb-4 h-px w-16 bg-white/40 md:mb-5" aria-hidden="true" />
-
-          <span className="text-[11px] uppercase tracking-[0.5em] text-white/80 [text-shadow:0_1px_2px_rgba(0,0,0,0.65),0_2px_18px_rgba(0,0,0,0.6)]">
-            Bröllopsfotograf · Skåne
-          </span>
-        </div>
-
-        <div className="flex flex-col items-center gap-5 md:gap-6">
-          <p className="max-w-xl text-sm font-light italic leading-relaxed text-white/90 [text-shadow:0_1px_2px_rgba(0,0,0,0.65),0_2px_20px_rgba(0,0,0,0.6)] md:text-base">
-            Äkta ögonblick, varsamt bevarade
-          </p>
-
-          <span className="w-full bg-white px-10 py-4 text-[11px] uppercase tracking-[0.28em] text-stone-900 sm:w-auto">
-            Se bilder
-          </span>
-        </div>
+        <span
+          className="absolute bottom-5 left-1/2 z-10 -translate-x-1/2 text-white/65 drop-shadow-[0_1px_4px_rgba(0,0,0,0.55)]"
+          aria-hidden="true"
+        >
+          <ChevronDown size={22} strokeWidth={1.25} />
+        </span>
       </div>
-
-      <span
-        className="absolute bottom-5 left-1/2 z-10 -translate-x-1/2 text-white/65 drop-shadow-[0_1px_4px_rgba(0,0,0,0.55)]"
-        aria-hidden="true"
-      >
-        <ChevronDown size={22} strokeWidth={1.25} />
-      </span>
     </div>
   );
 }
@@ -366,22 +418,26 @@ function WeddingHero({ photos }: { photos: PreviewPhoto[] }) {
 function HeroStrip({
   photo,
   className = "",
+  style,
 }: {
   photo?: PreviewPhoto;
   className?: string;
+  style?: CSSProperties;
 }) {
   const [loaded, setLoaded] = useState(false);
 
   if (!photo?.url) return null;
 
   return (
-    <div className={`relative overflow-hidden ${className}`}>
+    <div className={`relative overflow-hidden bg-white ${className}`} style={style}>
       <img
         key={photo.url}
-        src={photo.url}
+        src={cloudinaryImage(photo.url, { width: HERO_STANDING_WIDTH })}
         alt={photo.alt || "Bröllopsfotograf Myelie Lendelund"}
+        loading="lazy"
+        decoding="async"
         onLoad={() => setLoaded(true)}
-        className={`h-full w-full object-cover object-[center_35%] transition-[opacity,transform] duration-1000 ease-out ${
+        className={`h-full w-full object-cover object-[center_35%] transition-[opacity,transform] duration-1000 ease-out md:object-contain md:object-center ${
           loaded ? "scale-100 opacity-100" : "scale-[1.06] opacity-0"
         }`}
       />
